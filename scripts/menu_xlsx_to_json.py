@@ -17,6 +17,7 @@ SIMPLE_SHEETS = {
     "鍋燒": "nabeyaki",
     "麵食": "noodles",
     "甜點(飲料區)": "dessert",
+    "生活食品": "grocery",
 }
 
 

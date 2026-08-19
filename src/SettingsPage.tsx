@@ -28,7 +28,7 @@ export function SettingsPage({
   })
 
   return (
-    <div className="px-4 py-6 sm:px-6 sm:py-10">
+    <div className="px-4 py-6 pb-24 sm:px-6 sm:py-10">
       <header className="mb-6 border-b-2 border-dashed border-ink/20 pb-4">
         <button type="button" className="text-sm text-[var(--accent-2)]" onClick={onBack}>
           ← 回餐卡
@@ -101,28 +101,74 @@ export function SettingsPage({
         </p>
       </section>
 
-      <section className="mt-4 bg-ticket p-4 ring-1 ring-ink/15">
-        <h2 className="font-display text-xl">換算單價</h2>
-        <p className="mt-1 text-sm text-muted">只影響「還能吃幾餐／幾杯」，不會改菜單售價。</p>
+      <section className="mt-4 bg-ticket p-4">
+        <h2 className="text-[21px] font-semibold">這個月打算吃幾餐</h2>
+        <p className="mt-1 text-sm text-muted">用來算必要餐費。規劃頁會扣掉這些再看剩下多少。</p>
+        <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+          <label className="flex gap-2">
+            <input
+              type="checkbox"
+              checked={state.habit.weekdayLunch}
+              onChange={(event) =>
+                onChange({ habit: { ...state.habit, weekdayLunch: event.target.checked } })
+              }
+            />
+            平日午餐
+          </label>
+          <label className="flex gap-2">
+            <input
+              type="checkbox"
+              checked={state.habit.weekdayDinner}
+              onChange={(event) =>
+                onChange({ habit: { ...state.habit, weekdayDinner: event.target.checked } })
+              }
+            />
+            平日晚餐
+          </label>
+          <label className="flex gap-2">
+            <input
+              type="checkbox"
+              checked={state.habit.weekendLunch}
+              onChange={(event) =>
+                onChange({ habit: { ...state.habit, weekendLunch: event.target.checked } })
+              }
+            />
+            假日午餐
+          </label>
+          <label className="flex gap-2">
+            <input
+              type="checkbox"
+              checked={state.habit.weekendDinner}
+              onChange={(event) =>
+                onChange({ habit: { ...state.habit, weekendDinner: event.target.checked } })
+              }
+            />
+            假日晚餐
+          </label>
+        </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="block text-sm">
-            一餐怎麼算
+            午餐大概多少
             <input
-              className="mt-1 h-11 w-full border border-ink/20 bg-paper px-3"
+              className="mt-1 h-11 w-full border border-[var(--line)] bg-paper px-3"
               type="number"
-              min="1"
-              value={state.mealUnitPrice}
-              onChange={(event) => onChange({ mealUnitPrice: Number(event.target.value) || 0 })}
+              min="0"
+              value={state.habit.lunchPrice}
+              onChange={(event) =>
+                onChange({ habit: { ...state.habit, lunchPrice: Number(event.target.value) || 0 } })
+              }
             />
           </label>
           <label className="block text-sm">
-            一杯怎麼算
+            晚餐大概多少
             <input
-              className="mt-1 h-11 w-full border border-ink/20 bg-paper px-3"
+              className="mt-1 h-11 w-full border border-[var(--line)] bg-paper px-3"
               type="number"
-              min="1"
-              value={state.drinkUnitPrice}
-              onChange={(event) => onChange({ drinkUnitPrice: Number(event.target.value) || 0 })}
+              min="0"
+              value={state.habit.dinnerPrice}
+              onChange={(event) =>
+                onChange({ habit: { ...state.habit, dinnerPrice: Number(event.target.value) || 0 } })
+              }
             />
           </label>
         </div>

@@ -1,3 +1,4 @@
+import { defaultMealHabit, type MealHabit } from './leftover.ts'
 import { monthKey, remainingDays, taipeiParts, type DayCountMode } from './month.ts'
 import type { Mode } from './money.ts'
 import type { SizeKey, TicketLine } from './menu.ts'
@@ -29,6 +30,8 @@ export type AppState = {
   customRemainingDays: number
   defaultDrinkSize: DefaultDrinkSize
   appearance: Appearance
+  habit: MealHabit
+  monthEndReserve: number
   entries: LedgerEntry[]
   history: Record<string, LedgerEntry[]>
 }
@@ -45,6 +48,8 @@ export function defaultState(now: Date): AppState {
     customRemainingDays: remainingDays(now),
     defaultDrinkSize: 'iced_m',
     appearance: 'light',
+    habit: defaultMealHabit(),
+    monthEndReserve: 0,
     entries: [],
     history: {},
   }
@@ -77,6 +82,19 @@ function isAppearance(value: unknown): value is Appearance {
   return value === 'light' || value === 'dark'
 }
 
+function isHabit(value: unknown): value is MealHabit {
+  if (!value || typeof value !== 'object') return false
+  const habit = value as MealHabit
+  return (
+    typeof habit.weekdayLunch === 'boolean' &&
+    typeof habit.weekdayDinner === 'boolean' &&
+    typeof habit.weekendLunch === 'boolean' &&
+    typeof habit.weekendDinner === 'boolean' &&
+    Number.isFinite(habit.lunchPrice) &&
+    Number.isFinite(habit.dinnerPrice)
+  )
+}
+
 export function normalizeState(raw: Record<string, unknown>, now: Date): AppState {
   const base = defaultState(now)
   const entries = Array.isArray(raw.entries) ? raw.entries.filter(isLedgerEntry) : base.entries
@@ -100,6 +118,10 @@ export function normalizeState(raw: Record<string, unknown>, now: Date): AppStat
       ? raw.defaultDrinkSize
       : base.defaultDrinkSize,
     appearance: isAppearance(raw.appearance) ? raw.appearance : base.appearance,
+    habit: isHabit(raw.habit) ? raw.habit : base.habit,
+    monthEndReserve: Number.isFinite(raw.monthEndReserve)
+      ? Number(raw.monthEndReserve)
+      : base.monthEndReserve,
     entries,
     history,
   }

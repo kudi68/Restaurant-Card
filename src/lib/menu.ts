@@ -2,7 +2,7 @@ import rawMenu from '../data/menu.json'
 
 export type SizeKey = 'hot_s' | 'hot_m' | 'iced_m' | 'xl'
 
-export type SimpleCategory = 'buffet' | 'nabeyaki' | 'noodles' | 'dessert'
+export type SimpleCategory = 'buffet' | 'nabeyaki' | 'noodles' | 'dessert' | 'grocery'
 export type Category = SimpleCategory | 'drink' | 'custom'
 
 export type SimpleItem = {
@@ -46,6 +46,7 @@ export const CATEGORY_LABEL: Record<Exclude<Category, 'custom'>, string> = {
   noodles: '麵食',
   drink: '飲料',
   dessert: '甜點',
+  grocery: '生活食品',
 }
 
 export function visibleItems(items: MenuItem[], category: Exclude<Category, 'custom'>): MenuItem[] {

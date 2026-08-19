@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { PlanPage } from './PlanPage.tsx'
 import { MenuPicker } from './MenuPicker.tsx'
 import { SettingsPage } from './SettingsPage.tsx'
-import { formatDays, formatMoney } from './lib/format.ts'
+import { formatMoney } from './lib/format.ts'
 import { SIZE_LABEL, type TicketLine } from './lib/menu.ts'
 import {
   applyAdjust,
   applySpend,
-  conversions,
   dailyAverage,
   todayAdvice,
   type Mode,
@@ -17,6 +17,11 @@ import {
   planningDays,
   taipeiParts,
 } from './lib/month.ts'
+import {
+  leftoverOf,
+  necessaryTotal,
+  remainingDateList,
+} from './lib/leftover.ts'
 import {
   loadState,
   rolloverIfNeeded,
@@ -45,7 +50,8 @@ export default function App() {
   const [adjustAmount, setAdjustAmount] = useState('')
   const [feedback, setFeedback] = useState('')
   const [feedbackStatus, setFeedbackStatus] = useState('')
-  const [screen, setScreen] = useState<'home' | 'settings'>('home')
+  const [feedbackKind, setFeedbackKind] = useState('一般建議')
+  const [screen, setScreen] = useState<'home' | 'plan' | 'settings'>('home')
 
   useEffect(() => {
     saveState(state)
@@ -78,10 +84,15 @@ export default function App() {
   )
   const advice =
     daily == null ? null : todayAdvice(state.mode, daily, spentToday)
-  const conv =
-    state.balance == null || daily == null
-      ? null
-      : conversions(state.balance, daily, state.mealUnitPrice, state.drinkUnitPrice)
+  const leftover = useMemo(() => {
+    if (state.balance == null) return null
+    const dates = remainingDateList({
+      now,
+      mode: state.dayCountMode,
+      customDays: state.customRemainingDays,
+    })
+    return leftoverOf(state.balance, necessaryTotal(state.habit, dates))
+  }, [state.balance, state.dayCountMode, state.customRemainingDays, state.habit, now])
 
   function patch(partial: Partial<AppState>) {
     setState((prev) => ({ ...prev, ...partial }))
@@ -150,7 +161,7 @@ export default function App() {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          message: `${message}\n月份：${state.monthKey}\n模式：${state.mode}`,
+          message: `【${feedbackKind}】\n${message}\n月份：${state.monthKey}\n模式：${state.mode}`,
         }),
       })
       const data = (await response.json()) as { ok?: boolean; error?: string }
@@ -192,25 +203,35 @@ export default function App() {
 
   if (screen === 'settings') {
     return (
-      <SettingsPage
-        state={state}
-        now={now}
-        onChange={patch}
-        onBack={() => setScreen('home')}
-      />
+      <>
+        <SettingsPage
+          state={state}
+          now={now}
+          onChange={patch}
+          onBack={() => setScreen('home')}
+        />
+        <AppNav screen={screen} onChange={setScreen} />
+      </>
+    )
+  }
+
+  if (screen === 'plan') {
+    return (
+      <>
+        <PlanPage state={state} now={now} onChange={patch} />
+        <AppNav screen={screen} onChange={setScreen} />
+      </>
     )
   }
 
   return (
-    <div className="pb-10">
+    <div className="pb-24">
       <header className="sticky top-0 z-20 flex h-12 items-center justify-between px-4 text-xs text-[var(--nav-fg)] [background:var(--nav-bg)] [backdrop-filter:saturate(180%)_blur(20px)]">
         <span>餐卡</span>
         <span>
           {monthLabel(state.monthKey)} · {parts.month}/{parts.day}
         </span>
-        <button type="button" onClick={() => setScreen('settings')}>
-          設定
-        </button>
+        <span />
       </header>
 
       <section className="px-4 pb-6 pt-10 text-center">
@@ -276,12 +297,17 @@ export default function App() {
         </section>
       )}
 
-      {conv && (
-        <section className="mt-4 grid grid-cols-2 gap-3 px-4">
-          <Ticket label="餘額還能吃" value={`${formatDays(conv.mealsLeft)} 餐`} />
-          <Ticket label="餘額還能喝" value={`${formatDays(conv.drinksLeft)} 杯`} />
-          <Ticket label="幾天湊一餐" value={`${formatDays(conv.daysPerMeal)} 天`} />
-          <Ticket label="幾天湊一杯" value={`${formatDays(conv.daysPerDrink)} 天`} />
+      {leftover != null && (
+        <section className="mt-4 px-4">
+          <button
+            type="button"
+            className="w-full rounded-[16px] bg-[var(--surface)] p-4 text-left"
+            onClick={() => setScreen('plan')}
+          >
+            <p className="text-xs text-muted">扣掉必要餐費後剩下</p>
+            <p className="text-[36px] font-semibold tabular-nums">${formatMoney(leftover)}</p>
+            <p className="mt-1 text-sm text-[var(--accent-2)]">去規劃怎麼用 →</p>
+          </button>
         </section>
       )}
 
@@ -386,8 +412,18 @@ export default function App() {
       <section className="mt-8 px-4 pt-5">
         <h2 className="text-[28px] font-normal tracking-[0.2px]">建議回饋</h2>
         <p className="mt-1 text-sm text-muted">
-          送到 Telegram。本機 dev 才接得上；上線後還要部署 API。GitHub Issue 仍可用。
+          建議會送到 Telegram。選類別可以讓我比較快處理。
         </p>
+        <select
+          className="mt-3 h-11 w-full rounded-[11px] border-[3px] border-[var(--line)] bg-[var(--surface)] px-3"
+          value={feedbackKind}
+          onChange={(event) => setFeedbackKind(event.target.value)}
+        >
+          <option>一般建議</option>
+          <option>新增菜單</option>
+          <option>變更價格</option>
+          <option>品項賣完</option>
+        </select>
         <textarea
           className="mt-3 min-h-24 w-full rounded-[12px] border border-[var(--line)] bg-[var(--surface)] p-3"
           placeholder="想改什麼、哪裡算錯、菜單漏了什麼…"
@@ -416,6 +452,7 @@ export default function App() {
       <p className="mt-8 text-center text-xs text-muted">
         資料只存在這個瀏覽器 · {monthKey(now)}
       </p>
+      <AppNav screen={screen} onChange={setScreen} />
     </div>
   )
 }
@@ -469,11 +506,33 @@ function AdviceCard({
   )
 }
 
-function Ticket({ label, value }: { label: string; value: string }) {
+function AppNav({
+  screen,
+  onChange,
+}: {
+  screen: 'home' | 'plan' | 'settings'
+  onChange: (screen: 'home' | 'plan' | 'settings') => void
+}) {
+  const items = [
+    { id: 'home' as const, label: '餐卡' },
+    { id: 'plan' as const, label: '規劃' },
+    { id: 'settings' as const, label: '設定' },
+  ]
   return (
-    <div className="rounded-[12px] bg-[var(--surface)] px-3 py-3">
-      <p className="text-[11px] text-muted">{label}</p>
-      <p className="mt-1 text-[21px] font-semibold">{value}</p>
-    </div>
+    <nav className="fixed bottom-0 left-1/2 z-30 w-full max-w-[44rem] -translate-x-1/2 border-t border-[var(--line)] bg-[var(--nav-bg)] [backdrop-filter:saturate(180%)_blur(20px)]">
+      <div className="grid grid-cols-3">
+        {items.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={`h-14 text-sm ${screen === item.id ? 'font-semibold text-[var(--accent)]' : 'text-[var(--muted)]'}`}
+            onClick={() => onChange(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </nav>
   )
 }
+

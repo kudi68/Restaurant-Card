@@ -22,6 +22,7 @@ const TABS: Array<Exclude<Category, 'custom'>> = [
   'noodles',
   'drink',
   'dessert',
+  'grocery',
 ]
 
 export function MenuPicker({
