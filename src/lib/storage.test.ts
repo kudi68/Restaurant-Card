@@ -14,6 +14,25 @@ describe('parseState', () => {
     expect(state.entries).toEqual([])
   })
 
+  it('fills new settings defaults without wiping an old saved balance', () => {
+    const raw = JSON.stringify({
+      version: 1,
+      mode: 'surplus',
+      balance: 1300,
+      monthKey: '2026-08',
+      mealUnitPrice: 120,
+      drinkUnitPrice: 55,
+      entries: [],
+      history: {},
+    })
+    const state = parseState(raw, AUG)
+    expect(state.balance).toBe(1300)
+    expect(state.mode).toBe('surplus')
+    expect(state.dayCountMode).toBe('calendar')
+    expect(state.customRemainingDays).toBe(13)
+    expect(state.defaultDrinkSize).toBe('iced_m')
+  })
+
   it('returns a fresh state when JSON is corrupt', () => {
     const state = parseState('{not json', AUG)
     expect(state.monthKey).toBe('2026-08')

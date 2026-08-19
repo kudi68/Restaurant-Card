@@ -1,11 +1,12 @@
-import { monthKey, taipeiParts } from './month.ts'
+import { monthKey, remainingDays, taipeiParts, type DayCountMode } from './month.ts'
 import type { Mode } from './money.ts'
-import type { TicketLine } from './menu.ts'
+import type { SizeKey, TicketLine } from './menu.ts'
 import { compiledMenu } from './menu.ts'
 
 export const STORAGE_KEY = 'restaurant-card:v1'
 
 export type LedgerType = 'spend' | 'adjust'
+export type DefaultDrinkSize = Extract<SizeKey, 'hot_m' | 'iced_m'>
 
 export type LedgerEntry = {
   id: string
@@ -23,6 +24,9 @@ export type AppState = {
   monthKey: string
   mealUnitPrice: number
   drinkUnitPrice: number
+  dayCountMode: DayCountMode
+  customRemainingDays: number
+  defaultDrinkSize: DefaultDrinkSize
   entries: LedgerEntry[]
   history: Record<string, LedgerEntry[]>
 }
@@ -35,6 +39,9 @@ export function defaultState(now: Date): AppState {
     monthKey: monthKey(now),
     mealUnitPrice: compiledMenu.mealUnitPriceDefault,
     drinkUnitPrice: compiledMenu.drinkUnitPriceDefault,
+    dayCountMode: 'calendar',
+    customRemainingDays: remainingDays(now),
+    defaultDrinkSize: 'iced_m',
     entries: [],
     history: {},
   }
@@ -51,29 +58,51 @@ function isLedgerEntry(value: unknown): value is LedgerEntry {
   )
 }
 
-function isAppState(value: unknown): value is AppState {
-  if (!value || typeof value !== 'object') return false
-  const state = value as AppState
-  return (
-    state.version === 1 &&
-    (state.mode === 'surplus' || state.mode === 'scarcity') &&
-    (state.balance === null || Number.isFinite(state.balance)) &&
-    typeof state.monthKey === 'string' &&
-    Number.isFinite(state.mealUnitPrice) &&
-    Number.isFinite(state.drinkUnitPrice) &&
-    Array.isArray(state.entries) &&
-    state.entries.every(isLedgerEntry) &&
-    !!state.history &&
-    typeof state.history === 'object'
-  )
+function isMode(value: unknown): value is Mode {
+  return value === 'surplus' || value === 'scarcity'
+}
+
+function isDayCountMode(value: unknown): value is DayCountMode {
+  return value === 'calendar' || value === 'weekdays' || value === 'custom'
+}
+
+function isDefaultDrinkSize(value: unknown): value is DefaultDrinkSize {
+  return value === 'hot_m' || value === 'iced_m'
+}
+
+export function normalizeState(raw: Record<string, unknown>, now: Date): AppState {
+  const base = defaultState(now)
+  const entries = Array.isArray(raw.entries) ? raw.entries.filter(isLedgerEntry) : base.entries
+  const history =
+    raw.history && typeof raw.history === 'object' && !Array.isArray(raw.history)
+      ? (raw.history as Record<string, LedgerEntry[]>)
+      : base.history
+  return {
+    version: 1,
+    mode: isMode(raw.mode) ? raw.mode : base.mode,
+    balance:
+      raw.balance === null || Number.isFinite(raw.balance) ? (raw.balance as number | null) : base.balance,
+    monthKey: typeof raw.monthKey === 'string' ? raw.monthKey : base.monthKey,
+    mealUnitPrice: Number.isFinite(raw.mealUnitPrice) ? Number(raw.mealUnitPrice) : base.mealUnitPrice,
+    drinkUnitPrice: Number.isFinite(raw.drinkUnitPrice) ? Number(raw.drinkUnitPrice) : base.drinkUnitPrice,
+    dayCountMode: isDayCountMode(raw.dayCountMode) ? raw.dayCountMode : base.dayCountMode,
+    customRemainingDays: Number.isFinite(raw.customRemainingDays)
+      ? Number(raw.customRemainingDays)
+      : base.customRemainingDays,
+    defaultDrinkSize: isDefaultDrinkSize(raw.defaultDrinkSize)
+      ? raw.defaultDrinkSize
+      : base.defaultDrinkSize,
+    entries,
+    history,
+  }
 }
 
 export function parseState(raw: string | null, now: Date): AppState {
   if (!raw) return defaultState(now)
   try {
     const parsed: unknown = JSON.parse(raw)
-    if (!isAppState(parsed)) return defaultState(now)
-    return rolloverIfNeeded(parsed, now)
+    if (!parsed || typeof parsed !== 'object') return defaultState(now)
+    return rolloverIfNeeded(normalizeState(parsed as Record<string, unknown>, now), now)
   } catch {
     return defaultState(now)
   }
@@ -90,6 +119,7 @@ export function rolloverIfNeeded(state: AppState, now: Date): AppState {
     ...state,
     monthKey: current,
     balance: null,
+    customRemainingDays: remainingDays(now),
     entries: [],
     history: {
       ...state.history,

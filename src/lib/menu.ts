@@ -73,6 +73,10 @@ export function isDrink(item: MenuItem): item is DrinkItem {
   return item.category === 'drink'
 }
 
+export function resolveDrinkSize(item: DrinkItem, preferred: SizeKey): SizeKey | null {
+  return drinkPrice(item, preferred) != null ? preferred : null
+}
+
 export const compiledMenu = rawMenu as {
   restaurantName: string
   mealUnitPriceDefault: number

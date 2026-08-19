@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { MenuPicker } from './MenuPicker.tsx'
+import { SettingsPage } from './SettingsPage.tsx'
 import { formatDays, formatMoney } from './lib/format.ts'
 import { SIZE_LABEL, type TicketLine } from './lib/menu.ts'
 import {
@@ -10,7 +11,12 @@ import {
   todayAdvice,
   type Mode,
 } from './lib/money.ts'
-import { monthKey, remainingDays, taipeiParts } from './lib/month.ts'
+import {
+  isTaipeiWeekday,
+  monthKey,
+  planningDays,
+  taipeiParts,
+} from './lib/month.ts'
 import {
   loadState,
   rolloverIfNeeded,
@@ -38,6 +44,7 @@ export default function App() {
   const [spendNote, setSpendNote] = useState('')
   const [adjustAmount, setAdjustAmount] = useState('')
   const [feedback, setFeedback] = useState('')
+  const [screen, setScreen] = useState<'home' | 'settings'>('home')
 
   useEffect(() => {
     saveState(state)
@@ -53,7 +60,12 @@ export default function App() {
     return () => window.removeEventListener('focus', sync)
   }, [])
 
-  const daysLeft = remainingDays(now)
+  const daysLeft = planningDays({
+    mode: state.dayCountMode,
+    customDays: state.customRemainingDays,
+    now,
+  })
+  const weekendPaused = state.dayCountMode === 'weekdays' && !isTaipeiWeekday(now)
   const daily = state.balance == null ? null : dailyAverage(state.balance, daysLeft)
   const spentToday = useMemo(
     () => spentOnTaipeiDay(state.entries, now),
@@ -135,6 +147,23 @@ export default function App() {
   }
 
   const parts = taipeiParts(now)
+  const dayHint =
+    state.dayCountMode === 'weekdays'
+      ? `只算平日 · 還有 ${daysLeft} 天`
+      : state.dayCountMode === 'custom'
+        ? `自訂 ${daysLeft} 天`
+        : `還有 ${daysLeft} 天`
+
+  if (screen === 'settings') {
+    return (
+      <SettingsPage
+        state={state}
+        now={now}
+        onChange={patch}
+        onBack={() => setScreen('home')}
+      />
+    )
+  }
 
   return (
     <div className="px-4 py-6 sm:px-6 sm:py-10">
@@ -145,14 +174,15 @@ export default function App() {
             餐卡
           </h1>
           <p className="mt-1 text-sm text-muted">
-            {monthLabel(state.monthKey)} · 今天 {parts.month}/{parts.day} · 還有{' '}
-            {daysLeft} 天
+            {monthLabel(state.monthKey)} · 今天 {parts.month}/{parts.day} · {dayHint}
           </p>
         </div>
-        <ModeSwitch
-          mode={state.mode}
-          onChange={(mode) => patch({ mode })}
-        />
+        <div className="flex flex-col items-end gap-2">
+          <button type="button" className="text-sm underline" onClick={() => setScreen('settings')}>
+            設定
+          </button>
+          <ModeSwitch mode={state.mode} onChange={(mode) => patch({ mode })} />
+        </div>
       </header>
 
       <section className="rounded-sm bg-ticket p-5 shadow-[6px_6px_0_0_rgb(27_20_12_/_0.12)] ring-1 ring-ink/15">
@@ -198,20 +228,22 @@ export default function App() {
                 : advice.stillNeed
             }
             hint={
-              state.mode === 'scarcity'
-                ? advice.overspent
-                  ? '已經超過今日配額'
-                  : `日均 ${formatMoney(advice.daily)}，今天已花 ${formatMoney(spentToday)}`
-                : advice.stillNeed === 0
-                  ? '今日花不完目標已達標'
-                  : `日均 ${formatMoney(advice.daily)}，今天已花 ${formatMoney(spentToday)}`
+              weekendPaused
+                ? '今天是週末，不列入平日分母；這是平日每日額度。'
+                : state.mode === 'scarcity'
+                  ? advice.overspent
+                    ? '已經超過今日配額'
+                    : `日均 ${formatMoney(advice.daily)}，今天已花 ${formatMoney(spentToday)}`
+                  : advice.stillNeed === 0
+                    ? '今日花不完目標已達標'
+                    : `日均 ${formatMoney(advice.daily)}，今天已花 ${formatMoney(spentToday)}`
             }
             warn={state.mode === 'scarcity' && advice.overspent}
           />
           <AdviceCard
             title="平均每天"
             value={advice.daily}
-            hint={`把餘額平攤到含今天的 ${daysLeft} 天`}
+            hint={`把餘額平攤到 ${daysLeft} 天${state.dayCountMode === 'weekdays' ? '平日' : ''}`}
           />
         </section>
       )}
@@ -233,6 +265,7 @@ export default function App() {
         <div className="mt-3">
           <MenuPicker
             disabled={state.balance == null}
+            defaultDrinkSize={state.defaultDrinkSize}
             onConfirm={(lines: TicketLine[], total: number) => {
               if (state.balance == null) return
               patch({ balance: applySpend(state.balance, total) })
@@ -286,33 +319,6 @@ export default function App() {
             扣掉這筆
           </button>
         </form>
-      </section>
-
-      <section className="mt-6 grid gap-3 sm:grid-cols-2">
-        <label className="block text-sm">
-          一餐怎麼算
-          <input
-            className="mt-1 h-11 w-full rounded-sm border border-ink/20 bg-ticket px-3"
-            type="number"
-            min="1"
-            value={state.mealUnitPrice}
-            onChange={(e) =>
-              patch({ mealUnitPrice: Number(e.target.value) || 0 })
-            }
-          />
-        </label>
-        <label className="block text-sm">
-          一杯怎麼算
-          <input
-            className="mt-1 h-11 w-full rounded-sm border border-ink/20 bg-ticket px-3"
-            type="number"
-            min="1"
-            value={state.drinkUnitPrice}
-            onChange={(e) =>
-              patch({ drinkUnitPrice: Number(e.target.value) || 0 })
-            }
-          />
-        </label>
       </section>
 
       <section className="mt-6">

@@ -3,6 +3,7 @@ import {
   compiledMenu,
   drinkPrice,
   lineTotal,
+  resolveDrinkSize,
   visibleItems,
   type DrinkItem,
 } from './menu.ts'
@@ -30,5 +31,24 @@ describe('drinkPrice', () => {
 describe('lineTotal', () => {
   it('multiplies unit price by quantity', () => {
     expect(lineTotal({ unitPrice: 62, qty: 2 })).toBe(124)
+  })
+})
+
+describe('resolveDrinkSize', () => {
+  const honeyGreen = compiledMenu.items.find(
+    (item): item is DrinkItem => item.category === 'drink' && item.name === '蜂蜜綠茶',
+  )
+  const blackTea = compiledMenu.items.find(
+    (item): item is DrinkItem => item.category === 'drink' && item.name === '紅茶',
+  )
+
+  it('uses the preferred size when that drink has it', () => {
+    expect(resolveDrinkSize(blackTea!, 'iced_m')).toBe('iced_m')
+    expect(resolveDrinkSize(blackTea!, 'hot_m')).toBe('hot_m')
+  })
+
+  it('returns null when the preferred size is missing so the picker can ask', () => {
+    expect(resolveDrinkSize(honeyGreen!, 'hot_m')).toBeNull()
+    expect(resolveDrinkSize(honeyGreen!, 'iced_m')).toBe('iced_m')
   })
 })

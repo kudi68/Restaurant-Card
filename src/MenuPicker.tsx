@@ -7,6 +7,7 @@ import {
   compiledMenu,
   drinkPrice,
   isDrink,
+  resolveDrinkSize,
   ticketTotal,
   visibleItems,
   type Category,
@@ -25,9 +26,11 @@ const TABS: Array<Exclude<Category, 'custom'>> = [
 
 export function MenuPicker({
   disabled,
+  defaultDrinkSize,
   onConfirm,
 }: {
   disabled: boolean
+  defaultDrinkSize: SizeKey
   onConfirm: (lines: TicketLine[], total: number) => void
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>('drink')
@@ -106,10 +109,18 @@ export function MenuPicker({
               <button
                 type="button"
                 className="flex w-full items-baseline justify-between bg-ticket px-3 py-2 text-left ring-1 ring-ink/10"
-                onClick={() => setPendingDrink(item)}
+                onClick={() => {
+                  const size = resolveDrinkSize(item, defaultDrinkSize)
+                  if (size) addDrink(item, size)
+                  else setPendingDrink(item)
+                }}
               >
                 <span>{item.name}</span>
-                <span className="text-xs text-muted">選尺寸</span>
+                <span className="text-xs text-muted">
+                  {resolveDrinkSize(item, defaultDrinkSize)
+                    ? SIZE_LABEL[defaultDrinkSize]
+                    : '選尺寸'}
+                </span>
               </button>
             ) : (
               <button
