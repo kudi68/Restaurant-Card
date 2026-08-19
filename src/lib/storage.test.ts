@@ -7,7 +7,7 @@ const SEP = new Date('2026-09-01T00:00:00+08:00')
 describe('parseState', () => {
   it('returns a fresh August state when storage is empty', () => {
     const state = parseState(null, AUG)
-    expect(state.version).toBe(1)
+    expect(state.version).toBe(2)
     expect(state.monthKey).toBe('2026-08')
     expect(state.balance).toBeNull()
     expect(state.mode).toBe('scarcity')
@@ -34,10 +34,50 @@ describe('parseState', () => {
     expect(state.appearance).toBe('light')
   })
 
+  it('migrates the v1 weekday and weekend meal flags into a seven-day schedule', () => {
+    const raw = JSON.stringify({
+      version: 1,
+      balance: 1300,
+      monthKey: '2026-08',
+      habit: {
+        weekdayLunch: true,
+        weekdayDinner: false,
+        weekendLunch: false,
+        weekendDinner: true,
+        lunchPrice: 70,
+        dinnerPrice: 90,
+      },
+      entries: [],
+      history: {},
+    })
+
+    const state = parseState(raw, AUG)
+
+    expect(state.version).toBe(2)
+    expect(state.balance).toBe(1300)
+    expect(state.habit.days.mon).toEqual({ lunch: true, dinner: false })
+    expect(state.habit.days.sat).toEqual({ lunch: false, dinner: true })
+    expect(state.habit.lunchPrice).toBe(70)
+    expect(state.habit.dinnerPrice).toBe(90)
+  })
+
   it('returns a fresh state when JSON is corrupt', () => {
     const state = parseState('{not json', AUG)
     expect(state.monthKey).toBe('2026-08')
     expect(state.balance).toBeNull()
+  })
+
+  it('keeps valid balance and entries when a damaged month key is normalized', () => {
+    const state = parseState(JSON.stringify({
+      version: 1,
+      balance: 500,
+      monthKey: 'broken',
+      entries: [{ id: 'a', at: '2026-08-19T03:00:00.000Z', type: 'spend', amount: 60 }],
+      history: {},
+    }), AUG)
+    expect(state.monthKey).toBe('2026-08')
+    expect(state.balance).toBe(500)
+    expect(state.entries).toHaveLength(1)
   })
 })
 

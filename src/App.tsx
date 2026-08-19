@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { PlanPage } from './PlanPage.tsx'
 import { MenuPicker } from './MenuPicker.tsx'
 import { SettingsPage } from './SettingsPage.tsx'
+import { TurnstileWidget } from './TurnstileWidget.tsx'
 import { formatMoney } from './lib/format.ts'
 import { SIZE_LABEL, type TicketLine } from './lib/menu.ts'
 import {
@@ -13,15 +14,21 @@ import {
 } from './lib/money.ts'
 import {
   isTaipeiWeekday,
+  millisecondsUntilNextTaipeiMidnight,
   monthKey,
   planningDays,
   taipeiParts,
 } from './lib/month.ts'
 import {
   leftoverOf,
-  necessaryTotal,
   remainingDateList,
 } from './lib/leftover.ts'
+import {
+  loadPlanDraft,
+  necessaryTotalForPlan,
+  parsePlanDraft,
+  savePlanDraft,
+} from './lib/plan.ts'
 import {
   loadState,
   rolloverIfNeeded,
@@ -32,6 +39,7 @@ import {
 } from './lib/storage.ts'
 
 const ISSUE_NEW = 'https://github.com/kudi68/Restaurant-Card/issues/new'
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY?.trim() ?? ''
 
 function newId(): string {
   return crypto.randomUUID()
@@ -45,30 +53,56 @@ function monthLabel(key: string): string {
 export default function App() {
   const [now, setNow] = useState(() => new Date())
   const [state, setState] = useState<AppState>(() => loadState(new Date()))
+  const [planDraft, setPlanDraft] = useState(() => loadPlanDraft(new Date()))
   const [spendAmount, setSpendAmount] = useState('')
   const [spendNote, setSpendNote] = useState('')
   const [adjustAmount, setAdjustAmount] = useState('')
   const [feedback, setFeedback] = useState('')
   const [feedbackStatus, setFeedbackStatus] = useState('')
   const [feedbackKind, setFeedbackKind] = useState('一般建議')
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileResetVersion, setTurnstileResetVersion] = useState(0)
+  const [storageWarning, setStorageWarning] = useState(false)
   const [screen, setScreen] = useState<'home' | 'plan' | 'settings'>('home')
 
   useEffect(() => {
-    saveState(state)
+    if (!saveState(state)) queueMicrotask(() => setStorageWarning(true))
   }, [state])
+
+  useEffect(() => {
+    if (!savePlanDraft(planDraft)) queueMicrotask(() => setStorageWarning(true))
+  }, [planDraft])
 
   useEffect(() => {
     document.documentElement.dataset.theme = state.appearance
   }, [state.appearance])
 
   useEffect(() => {
+    let midnightTimer = 0
     const sync = () => {
       const next = new Date()
       setNow(next)
       setState((prev) => rolloverIfNeeded(prev, next))
+      setPlanDraft((prev) => parsePlanDraft(JSON.stringify(prev), next))
+    }
+    const scheduleMidnight = () => {
+      window.clearTimeout(midnightTimer)
+      midnightTimer = window.setTimeout(() => {
+        sync()
+        scheduleMidnight()
+      }, millisecondsUntilNextTaipeiMidnight(new Date()))
+    }
+    const syncWhenVisible = () => {
+      if (document.visibilityState === 'visible') sync()
     }
     window.addEventListener('focus', sync)
-    return () => window.removeEventListener('focus', sync)
+    document.addEventListener('visibilitychange', syncWhenVisible)
+    scheduleMidnight()
+    return () => {
+      window.clearTimeout(midnightTimer)
+      window.removeEventListener('focus', sync)
+      document.removeEventListener('visibilitychange', syncWhenVisible)
+    }
   }, [])
 
   const daysLeft = planningDays({
@@ -88,11 +122,14 @@ export default function App() {
     if (state.balance == null) return null
     const dates = remainingDateList({
       now,
-      mode: state.dayCountMode,
-      customDays: state.customRemainingDays,
+      mode: 'calendar',
+      customDays: 31,
     })
-    return leftoverOf(state.balance, necessaryTotal(state.habit, dates))
-  }, [state.balance, state.dayCountMode, state.customRemainingDays, state.habit, now])
+    return leftoverOf(state.balance, necessaryTotalForPlan(state.habit, dates, {
+      dateKey: planDraft.dateKey,
+      ...planDraft.eatenToday,
+    }))
+  }, [state.balance, state.habit, planDraft.dateKey, planDraft.eatenToday, now])
 
   function patch(partial: Partial<AppState>) {
     setState((prev) => ({ ...prev, ...partial }))
@@ -155,6 +192,10 @@ export default function App() {
       setFeedbackStatus('先寫一點內容')
       return
     }
+    if (!turnstileToken) {
+      setFeedbackStatus('請先完成防機器人驗證')
+      return
+    }
     setFeedbackStatus('送出中…')
     try {
       const response = await fetch('/api/feedback', {
@@ -162,13 +203,16 @@ export default function App() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           message: `【${feedbackKind}】\n${message}\n月份：${state.monthKey}\n模式：${state.mode}`,
+          turnstileToken,
         }),
       })
       const data = (await response.json()) as { ok?: boolean; error?: string }
       if (!response.ok || !data.ok) {
         setFeedbackStatus(
-          data.error === 'telegram_failed'
-            ? 'Telegram 拒絕了（多半是還沒對這個 bot 傳過話，或 chat id 不對）'
+          data.error === 'verification_failed'
+            ? '驗證已過期，請重新完成防機器人驗證'
+            : data.error === 'telegram_failed'
+              ? 'Telegram 暫時無法接收，請稍後再試或改開 GitHub Issue'
             : '現在送不到 Telegram，請改開 GitHub Issue',
         )
         return
@@ -177,8 +221,16 @@ export default function App() {
       setFeedbackStatus('已送到 Telegram')
     } catch {
       setFeedbackStatus('網路失敗，請改開 GitHub Issue')
+    } finally {
+      setTurnstileToken('')
+      setTurnstileResetVersion((version) => version + 1)
     }
   }
+
+  const onTurnstileToken = useCallback((token: string) => {
+    setTurnstileToken(token)
+    if (token) setFeedbackStatus('')
+  }, [])
 
   function openFeedbackIssue() {
     const title = feedback.trim().slice(0, 60) || '餐卡建議'
@@ -218,7 +270,7 @@ export default function App() {
   if (screen === 'plan') {
     return (
       <>
-        <PlanPage state={state} now={now} onChange={patch} />
+        <PlanPage state={state} now={now} draft={planDraft} onDraftChange={setPlanDraft} />
         <AppNav screen={screen} onChange={setScreen} />
       </>
     )
@@ -430,14 +482,27 @@ export default function App() {
           value={feedback}
           onChange={(e) => setFeedback(e.target.value)}
         />
+        {TURNSTILE_SITE_KEY ? (
+          <TurnstileWidget
+            siteKey={TURNSTILE_SITE_KEY}
+            theme={state.appearance}
+            resetVersion={turnstileResetVersion}
+            onToken={onTurnstileToken}
+          />
+        ) : (
+          <p className="mt-2 text-sm text-muted">此備用站不提供 Telegram 回饋，請改用 GitHub Issue。</p>
+        )}
         <div className="mt-2 flex flex-wrap gap-2">
-          <button
-            className="h-11 rounded-[980px] bg-[var(--accent)] px-4 text-white"
-            type="button"
-            onClick={() => void sendTelegramFeedback()}
-          >
-            送到 Telegram
-          </button>
+          {TURNSTILE_SITE_KEY && (
+            <button
+              className="h-11 rounded-[980px] bg-[var(--accent)] px-4 text-white disabled:opacity-40"
+              type="button"
+              disabled={!turnstileToken}
+              onClick={() => void sendTelegramFeedback()}
+            >
+              送到 Telegram
+            </button>
+          )}
           <button
             className="h-11 rounded-[980px] border border-[var(--accent-2)] px-4 text-[var(--accent-2)]"
             type="button"
@@ -452,6 +517,7 @@ export default function App() {
       <p className="mt-8 text-center text-xs text-muted">
         資料只存在這個瀏覽器 · {monthKey(now)}
       </p>
+      {storageWarning && <p className="mx-4 mt-2 text-center text-sm text-[var(--accent)]">瀏覽器目前無法儲存資料；重新整理前請先不要關閉頁面。</p>}
       <AppNav screen={screen} onChange={setScreen} />
     </div>
   )

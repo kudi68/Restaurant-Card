@@ -1,105 +1,124 @@
+import { useMemo, useState } from 'react'
 import { formatMoney } from './lib/format.ts'
 import {
+  availableSizes,
   compiledMenu,
   drinkPrice,
   isDrink,
+  SIZE_LABEL,
   visibleItems,
   type DrinkItem,
+  type SizeKey,
 } from './lib/menu.ts'
+import { countAffordable, leftoverOf, mealsOnDate, remainingDateList } from './lib/leftover.ts'
 import {
-  leftoverOf,
-  necessaryTotal,
-  remainingDateList,
-  spendableOf,
-  countAffordable,
-} from './lib/leftover.ts'
+  addPlanLine,
+  cartTotal,
+  necessaryTotalForPlan,
+  projectedAfterCart,
+  resolvePlanUnitPrice,
+  setPlanLineQuantity,
+  type PlanCartLine,
+  type PlanDraft,
+} from './lib/plan.ts'
 import type { AppState } from './lib/storage.ts'
 
-export function PlanPage({
-  state,
-  now,
-  onChange,
-}: {
+export function PlanPage({ state, now, draft, onDraftChange }: {
   state: AppState
   now: Date
-  onChange: (partial: Partial<AppState>) => void
+  draft: PlanDraft
+  onDraftChange: (draft: PlanDraft) => void
 }) {
-  const dates = remainingDateList({
-    now,
-    mode: state.dayCountMode,
-    customDays: state.customRemainingDays,
+  const dates = remainingDateList({ now, mode: 'calendar', customDays: 31 })
+  const necessary = necessaryTotalForPlan(state.habit, dates, {
+    dateKey: draft.dateKey,
+    ...draft.eatenToday,
   })
-  const necessary = necessaryTotal(state.habit, dates)
   const leftover = state.balance == null ? null : leftoverOf(state.balance, necessary)
-  const spendable = leftover == null ? null : spendableOf(leftover, state.monthEndReserve)
   const drinks = visibleItems(compiledMenu.items, 'drink').filter(isDrink)
   const groceries = visibleItems(compiledMenu.items, 'grocery')
+  const [selectedName, setSelectedName] = useState(drinks[0]?.name ?? '')
+  const selectedDrink = useMemo(
+    () => drinks.find((drink) => drink.name === selectedName) ?? drinks[0],
+    [drinks, selectedName],
+  )
+  const preferredSize = selectedDrink && drinkPrice(selectedDrink, state.defaultDrinkSize) != null
+    ? state.defaultDrinkSize
+    : selectedDrink ? availableSizes(selectedDrink)[0] : undefined
+  const [selectedSize, setSelectedSize] = useState<SizeKey | undefined>(preferredSize)
+  const selectDrink = (name: string) => {
+    setSelectedName(name)
+    const drink = drinks.find((candidate) => candidate.name === name)
+    const nextSize = drink && drinkPrice(drink, state.defaultDrinkSize) != null
+      ? state.defaultDrinkSize
+      : drink ? availableSizes(drink)[0] : undefined
+    setSelectedSize(nextSize)
+  }
+
+  const total = cartTotal(draft.lines, compiledMenu.items)
+  const projected = leftover == null ? null : projectedAfterCart(leftover, draft.lines, compiledMenu.items)
+  const todayMeals = mealsOnDate(state.habit, now)
+  const patchDraft = (partial: Partial<PlanDraft>) => onDraftChange({ ...draft, ...partial })
+  const addSelected = () => {
+    if (!selectedDrink || !selectedSize || drinkPrice(selectedDrink, selectedSize) == null) return
+    patchDraft({ lines: addPlanLine(draft.lines, { category: 'drink', name: selectedDrink.name, size: selectedSize, qty: 1 }) })
+  }
 
   return (
     <div className="px-4 pb-24 pt-6">
       <h1 className="text-[32px] font-semibold leading-[1.1]">規劃剩餘</h1>
-      <p className="mt-2 text-sm text-muted">
-        先扣掉這個月還打算吃的午餐／晚餐，剩下的錢才拿來規劃飲料或生活食品。規劃不會扣餘額，真的買了請回餐卡記一筆。
-      </p>
+      <p className="mt-2 text-sm text-muted">先扣月底前必要餐費，再用購物車模擬飲料。目前生活食品／小物尚待價目；這裡不會扣餘額，真的買了才回餐卡記帳。</p>
 
-      {state.balance == null ? (
-        <p className="mt-6 text-muted">先回餐卡登記餘額。</p>
-      ) : (
+      {state.balance == null ? <p className="mt-6 text-muted">先回餐卡登記餘額。</p> : (
         <>
           <section className="mt-5 rounded-[16px] bg-[var(--surface)] p-4">
-            <p className="text-xs text-muted">必要餐費（{dates.length} 天）</p>
+            <p className="text-xs text-muted">必要餐費（今天到月底，共 {dates.length} 天）</p>
             <p className="text-[28px] font-semibold tabular-nums">${formatMoney(necessary)}</p>
-            <p className="mt-3 text-xs text-muted">扣完後剩下</p>
-            <p className={`text-[44px] font-semibold tabular-nums ${leftover != null && leftover < 0 ? 'text-[var(--accent)]' : ''}`}>
-              ${formatMoney(leftover)}
-            </p>
-            {leftover != null && leftover < 0 && (
-              <p className="mt-1 text-sm text-[var(--accent)]">必要餐費已超過餘額，先調習慣或少記幾餐。</p>
-            )}
+            <p className="mt-3 text-xs text-muted">扣完後可規劃</p>
+            <p className={`text-[44px] font-semibold tabular-nums ${leftover != null && leftover < 0 ? 'text-[var(--accent)]' : ''}`}>${formatMoney(leftover)}</p>
           </section>
 
-          <label className="mt-4 block text-sm">
-            月底想預留
-            <input
-              className="mt-1 h-11 w-full rounded-[11px] border-[3px] border-[var(--line)] bg-[var(--surface)] px-3"
-              type="number"
-              min="0"
-              value={state.monthEndReserve}
-              onChange={(event) => onChange({ monthEndReserve: Number(event.target.value) || 0 })}
-            />
-          </label>
-          <p className="mt-2 text-sm text-muted">
-            預留後還能花 <strong>${formatMoney(spendable)}</strong>
-          </p>
-
-          <section className="mt-6">
-            <h2 className="text-[21px] font-semibold">可以換成飲料</h2>
-            <p className="text-sm text-muted">用設定裡的預設尺寸估算，不是下單。</p>
-            <ul className="mt-2">
-              {drinks.slice(0, 8).map((item) => (
-                <DrinkGuess key={item.name} item={item} spendable={spendable ?? 0} preferred={state.defaultDrinkSize} />
-              ))}
-            </ul>
+          <section className="mt-4 rounded-[16px] bg-[var(--surface)] p-4">
+            <h2 className="text-[18px] font-semibold">今天已吃過</h2>
+            <p className="mt-1 text-sm text-muted">只排除今天，隔日會自動清空。</p>
+            <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+              <label className={`flex gap-2 ${todayMeals.lunch ? '' : 'opacity-40'}`}><input type="checkbox" disabled={!todayMeals.lunch} checked={draft.eatenToday.lunch} onChange={(event) => patchDraft({ eatenToday: { ...draft.eatenToday, lunch: event.target.checked } })} />今天午餐已吃</label>
+              <label className={`flex gap-2 ${todayMeals.dinner ? '' : 'opacity-40'}`}><input type="checkbox" disabled={!todayMeals.dinner} checked={draft.eatenToday.dinner} onChange={(event) => patchDraft({ eatenToday: { ...draft.eatenToday, dinner: event.target.checked } })} />今天晚餐已吃</label>
+            </div>
           </section>
 
           <section className="mt-6">
-            <h2 className="text-[21px] font-semibold">可以換成生活食品</h2>
-            {groceries.length === 0 ? (
-              <p className="mt-2 text-sm text-muted">菜單還沒有生活食品。把水果、牛奶、罐裝飲料補進 xlsx「生活食品」分頁後跟我說一聲。</p>
-            ) : (
-              <ul className="mt-2">
-                {groceries.map((item) => (
-                  <li key={item.name} className="flex justify-between border-b border-[var(--line)] py-2 text-sm">
-                    <span>{item.name}</span>
-                    <span className="text-muted">
-                      {'price' in item
-                        ? `約 ${countAffordable(spendable ?? 0, item.price)} 份`
-                        : '—'}
-                    </span>
-                  </li>
-                ))}
+            <h2 className="text-[21px] font-semibold">試算購物車</h2>
+            <p className="text-sm text-muted">同品項同尺寸會合併；價格永遠用目前菜單最新價格。</p>
+            <div className="mt-3 grid gap-2 rounded-[16px] bg-[var(--surface)] p-3 sm:grid-cols-[1fr_110px_auto]">
+              <select className="h-11 rounded-[10px] border border-[var(--line)] bg-paper px-2" value={selectedDrink?.name ?? ''} onChange={(event) => selectDrink(event.target.value)}>{drinks.map((drink) => <option key={drink.name} value={drink.name}>{drink.name}</option>)}</select>
+              <select className="h-11 rounded-[10px] border border-[var(--line)] bg-paper px-2" value={selectedSize ?? ''} onChange={(event) => setSelectedSize(event.target.value as SizeKey)}>{selectedDrink && availableSizes(selectedDrink).map((size) => <option key={size} value={size}>{SIZE_LABEL[size]} ${drinkPrice(selectedDrink, size)}</option>)}</select>
+              <button type="button" className="h-11 rounded-[980px] bg-[var(--accent)] px-4 text-white" onClick={addSelected}>加入試算</button>
+            </div>
+
+            {draft.lines.length === 0 ? <p className="mt-3 text-sm text-muted">購物車還是空的。</p> : (
+              <ul className="mt-3 divide-y divide-[var(--line)] rounded-[16px] bg-[var(--surface)] px-3">
+                {draft.lines.map((line) => <CartLine key={`${line.category}:${line.name}:${line.size ?? ''}`} line={line} onQuantity={(qty) => patchDraft({ lines: setPlanLineQuantity(draft.lines, line, qty) })} />)}
               </ul>
             )}
+            <div className={`mt-3 rounded-[16px] p-4 ${projected != null && projected < 0 ? 'bg-[color-mix(in_srgb,var(--accent)_12%,var(--surface))] text-[var(--accent)]' : 'bg-[var(--surface)]'}`}>
+              <div className="flex justify-between text-sm"><span>購物車合計</span><strong>${formatMoney(total)}</strong></div>
+              <p className="mt-2 text-xs">若照購物車買，月底還剩</p>
+              <p className="text-[36px] font-semibold tabular-nums">${formatMoney(projected)}</p>
+              {projected != null && projected < 0 && <p className="text-sm font-medium">已超過可規劃金額 ${formatMoney(Math.abs(projected))}，仍可繼續試算。</p>}
+              {draft.lines.length > 0 && <button type="button" className="mt-3 text-sm underline" onClick={() => patchDraft({ lines: [] })}>清空購物車</button>}
+            </div>
+          </section>
+
+          <section className="mt-6">
+            <h2 className="text-[21px] font-semibold">如果全換成飲料</h2>
+            <p className="text-sm text-muted">仍是獨立估算，不會加入購物車，也不會扣餘額。</p>
+            <ul className="mt-2">{drinks.slice(0, 8).map((item) => <DrinkGuess key={item.name} item={item} spendable={Math.max(0, leftover ?? 0)} preferred={state.defaultDrinkSize} />)}</ul>
+          </section>
+
+          <section className="mt-6">
+            <h2 className="text-[21px] font-semibold">生活食品／小物</h2>
+            {groceries.length === 0 ? <p className="mt-2 text-sm text-muted">價目尚未提供，目前購物車先使用 27 項飲料；之後補 xlsx「生活食品」分頁即可接入。</p> : <p className="mt-2 text-sm text-muted">已讀到 {groceries.length} 項生活食品，下一版可加入同一購物車。</p>}
           </section>
         </>
       )}
@@ -107,21 +126,14 @@ export function PlanPage({
   )
 }
 
-function DrinkGuess({
-  item,
-  spendable,
-  preferred,
-}: {
-  item: DrinkItem
-  spendable: number
-  preferred: 'hot_m' | 'iced_m'
-}) {
-  const price = drinkPrice(item, preferred) ?? drinkPrice(item, 'iced_m') ?? drinkPrice(item, 'hot_m')
+function CartLine({ line, onQuantity }: { line: PlanCartLine; onQuantity: (qty: number) => void }) {
+  const price = resolvePlanUnitPrice(line, compiledMenu.items)
+  return <li className="flex items-center justify-between gap-3 py-3 text-sm"><div><p>{line.name}{line.size ? ` · ${SIZE_LABEL[line.size]}` : ''}</p><p className="text-xs text-muted">{price == null ? '品項已下架' : `$${price} × ${line.qty}`}</p></div><div className="flex items-center gap-2"><button type="button" className="h-8 w-8 rounded-full border border-[var(--line)]" onClick={() => onQuantity(line.qty - 1)}>−</button><span className="w-5 text-center tabular-nums">{line.qty}</span><button type="button" className="h-8 w-8 rounded-full border border-[var(--line)]" onClick={() => onQuantity(line.qty + 1)}>＋</button></div></li>
+}
+
+function DrinkGuess({ item, spendable, preferred }: { item: DrinkItem; spendable: number; preferred: 'hot_m' | 'iced_m' }) {
+  const fallback = availableSizes(item)[0]
+  const price = drinkPrice(item, preferred) ?? (fallback ? drinkPrice(item, fallback) : null)
   if (price == null) return null
-  return (
-    <li className="flex justify-between border-b border-[var(--line)] py-2 text-sm">
-      <span>{item.name}</span>
-      <span className="text-muted">約 {countAffordable(spendable, price)} 杯</span>
-    </li>
-  )
+  return <li className="flex justify-between border-b border-[var(--line)] py-2 text-sm"><span>{item.name}</span><span className="text-muted">約 {countAffordable(spendable, price)} 杯</span></li>
 }

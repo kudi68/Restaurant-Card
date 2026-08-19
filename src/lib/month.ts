@@ -34,6 +34,12 @@ export function monthKey(now: Date, timeZone = TAIPEI_TZ): string {
   return `${year}-${String(month).padStart(2, '0')}`
 }
 
+export function millisecondsUntilNextTaipeiMidnight(now: Date): number {
+  const { year, month, day } = taipeiParts(now)
+  const nextMidnightUtc = Date.UTC(year, month - 1, day + 1) - 8 * 60 * 60 * 1000
+  return Math.max(1, nextMidnightUtc - now.getTime())
+}
+
 export function taipeiWeekday(now: Date, timeZone = TAIPEI_TZ): number {
   const label = new Intl.DateTimeFormat('en-US', {
     timeZone,

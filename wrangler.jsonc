@@ -1,5 +1,8 @@
 {
   "name": "restaurant-card",
   "compatibility_date": "2026-08-19",
-  "pages_build_output_dir": "./dist"
+  "pages_build_output_dir": "./dist",
+  "vars": {
+    "TURNSTILE_HOSTNAMES": "restaurant-card.pages.dev"
+  }
 }

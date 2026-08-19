@@ -2,26 +2,68 @@ import {
   isTaipeiWeekday,
   lastDayOfMonth,
   taipeiParts,
+  taipeiWeekday,
   type DayCountMode,
 } from './month.ts'
 
+export const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+export type WeekdayKey = typeof WEEKDAY_KEYS[number]
+export type MealChoice = { lunch: boolean; dinner: boolean }
+export type MealDays = Record<WeekdayKey, MealChoice>
+
 export type MealHabit = {
+  // Kept for short-lived compatibility with an already-open v1 PWA tab.
   weekdayLunch: boolean
   weekdayDinner: boolean
   weekendLunch: boolean
   weekendDinner: boolean
+  days: MealDays
   lunchPrice: number
   dinnerPrice: number
 }
 
-export const defaultMealHabit = (): MealHabit => ({
-  weekdayLunch: true,
-  weekdayDinner: true,
-  weekendLunch: true,
-  weekendDinner: true,
-  lunchPrice: 60,
-  dinnerPrice: 60,
-})
+const WEEKDAYS: WeekdayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri']
+const WEEKENDS: WeekdayKey[] = ['sat', 'sun']
+
+export function createMealHabit(days: MealDays, lunchPrice: number, dinnerPrice: number): MealHabit {
+  return {
+    weekdayLunch: WEEKDAYS.some((key) => days[key].lunch),
+    weekdayDinner: WEEKDAYS.some((key) => days[key].dinner),
+    weekendLunch: WEEKENDS.some((key) => days[key].lunch),
+    weekendDinner: WEEKENDS.some((key) => days[key].dinner),
+    days,
+    lunchPrice,
+    dinnerPrice,
+  }
+}
+
+export function mealDaysFromLegacy(input: {
+  weekdayLunch: boolean
+  weekdayDinner: boolean
+  weekendLunch: boolean
+  weekendDinner: boolean
+}): MealDays {
+  return {
+    mon: { lunch: input.weekdayLunch, dinner: input.weekdayDinner },
+    tue: { lunch: input.weekdayLunch, dinner: input.weekdayDinner },
+    wed: { lunch: input.weekdayLunch, dinner: input.weekdayDinner },
+    thu: { lunch: input.weekdayLunch, dinner: input.weekdayDinner },
+    fri: { lunch: input.weekdayLunch, dinner: input.weekdayDinner },
+    sat: { lunch: input.weekendLunch, dinner: input.weekendDinner },
+    sun: { lunch: input.weekendLunch, dinner: input.weekendDinner },
+  }
+}
+
+export const defaultMealHabit = (): MealHabit => createMealHabit(
+  mealDaysFromLegacy({
+    weekdayLunch: true,
+    weekdayDinner: true,
+    weekendLunch: true,
+    weekendDinner: true,
+  }),
+  60,
+  60,
+)
 
 function noonInTaipei(year: number, month: number, day: number): Date {
   const mm = String(month).padStart(2, '0')
@@ -47,12 +89,13 @@ export function remainingDateList(input: {
   return calendar
 }
 
-export function mealsOnDate(habit: MealHabit, date: Date): { lunch: boolean; dinner: boolean } {
-  const weekday = isTaipeiWeekday(date)
-  return {
-    lunch: weekday ? habit.weekdayLunch : habit.weekendLunch,
-    dinner: weekday ? habit.weekdayDinner : habit.weekendDinner,
-  }
+export function weekdayKey(date: Date): WeekdayKey {
+  const keys: WeekdayKey[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+  return keys[taipeiWeekday(date)] ?? 'sun'
+}
+
+export function mealsOnDate(habit: MealHabit, date: Date): MealChoice {
+  return habit.days[weekdayKey(date)]
 }
 
 export function necessaryOnDate(habit: MealHabit, date: Date): number {

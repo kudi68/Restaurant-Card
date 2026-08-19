@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { monthKey, planningDays, remainingDays, remainingWeekdays } from './month.ts'
+import { millisecondsUntilNextTaipeiMidnight, monthKey, planningDays, remainingDays, remainingWeekdays } from './month.ts'
 
 describe('remainingDays', () => {
   it('counts today through month end in Asia/Taipei', () => {
@@ -63,5 +63,15 @@ describe('monthKey', () => {
 
   it('rolls to September after Taipei midnight', () => {
     expect(monthKey(new Date('2026-08-31T22:00:00Z'))).toBe('2026-09')
+  })
+})
+
+describe('millisecondsUntilNextTaipeiMidnight', () => {
+  it('returns one second immediately before Taipei midnight', () => {
+    expect(millisecondsUntilNextTaipeiMidnight(new Date('2026-08-31T23:59:59+08:00'))).toBe(1000)
+  })
+
+  it('returns one day at Taipei midnight', () => {
+    expect(millisecondsUntilNextTaipeiMidnight(new Date('2026-08-31T00:00:00+08:00'))).toBe(86_400_000)
   })
 })
