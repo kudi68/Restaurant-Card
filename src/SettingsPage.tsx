@@ -30,10 +30,10 @@ export function SettingsPage({
   return (
     <div className="px-4 py-6 sm:px-6 sm:py-10">
       <header className="mb-6 border-b-2 border-dashed border-ink/20 pb-4">
-        <button type="button" className="text-sm underline" onClick={onBack}>
+        <button type="button" className="text-sm text-[#0066cc]" onClick={onBack}>
           ← 回餐卡
         </button>
-        <h1 className="mt-3 font-display text-3xl">個人化設定</h1>
+        <h1 className="mt-3 text-[40px] font-semibold leading-[1.1]">個人化設定</h1>
         <p className="mt-1 text-sm text-muted">這些只存在這個瀏覽器，換月餘額仍會歸零。</p>
       </header>
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { MenuPicker } from './MenuPicker.tsx'
 import { SettingsPage } from './SettingsPage.tsx'
+import { LiquidGlass } from './ui/LiquidGlass.tsx'
 import { formatDays, formatMoney } from './lib/format.ts'
 import { SIZE_LABEL, type TicketLine } from './lib/menu.ts'
 import {
@@ -166,60 +167,58 @@ export default function App() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-6 sm:py-10">
-      <header className="mb-6 flex items-end justify-between gap-3 border-b-2 border-dashed border-ink/20 pb-4">
-        <div>
-          <p className="text-xs tracking-[0.35em] text-stamp">MEAL TICKET</p>
-          <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight">
-            餐卡
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            {monthLabel(state.monthKey)} · 今天 {parts.month}/{parts.day} · {dayHint}
-          </p>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <button type="button" className="text-sm underline" onClick={() => setScreen('settings')}>
-            設定
-          </button>
-          <ModeSwitch mode={state.mode} onChange={(mode) => patch({ mode })} />
-        </div>
+    <div className="pb-10">
+      <header className="sticky top-0 z-20 flex h-12 items-center justify-between px-4 text-xs text-white [background:rgba(0,0,0,0.78)] [backdrop-filter:saturate(180%)_blur(20px)]">
+        <span>餐卡</span>
+        <span>
+          {monthLabel(state.monthKey)} · {parts.month}/{parts.day}
+        </span>
+        <button type="button" onClick={() => setScreen('settings')}>
+          設定
+        </button>
       </header>
 
-      <section className="rounded-sm bg-ticket p-5 shadow-[6px_6px_0_0_rgb(27_20_12_/_0.12)] ring-1 ring-ink/15">
-        <p className="text-xs tracking-widest text-muted">目前餘額</p>
-        {state.balance == null ? (
-          <p className="mt-2 font-display text-2xl">這個月還沒登記</p>
-        ) : (
-          <p className="mt-1 font-display text-5xl leading-none tabular-nums">
-            ${formatMoney(state.balance)}
-          </p>
-        )}
-        {state.balance != null && state.balance < 0 && (
-          <p className="mt-2 text-sm text-stamp">餘額是負的，可能記錯或超支了。</p>
-        )}
-
-        <form className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]" onSubmit={onAdjust}>
-          <input
-            className="h-11 rounded-sm border border-ink/20 bg-paper px-3"
-            inputMode="decimal"
-            type="number"
-            step="1"
-            placeholder="輸入或直接改餘額"
-            value={adjustAmount}
-            onChange={(e) => setAdjustAmount(e.target.value)}
-            aria-label="設定餘額"
-          />
-          <button
-            className="h-11 bg-ink px-4 text-paper"
-            type="submit"
-          >
-            {state.balance == null ? '登記餘額' : '改餘額'}
-          </button>
-        </form>
+      <section className="hero-field px-4 pb-8 pt-8 text-white">
+        <p className="text-[17px] text-white/70">{dayHint}</p>
+        <h1 className="mt-1 text-[40px] font-semibold leading-[1.1] tracking-[-0.4px]">餘額</h1>
+        <div className="mt-5">
+          <LiquidGlass radius={28}>
+            <div className="px-5 py-5 text-[#1d1d1f] shadow-[inset_0_1px_0_rgb(255_255_255_/_0.55)]">
+              {state.balance == null ? (
+                <p className="text-[28px] font-semibold">這個月還沒登記</p>
+              ) : (
+                <p className="text-[56px] font-semibold leading-[1.07] tracking-[-0.5px] tabular-nums">
+                  ${formatMoney(state.balance)}
+                </p>
+              )}
+              {state.balance != null && state.balance < 0 && (
+                <p className="mt-2 text-sm text-[#0071e3]">餘額是負的，可能記錯或超支了。</p>
+              )}
+              <form className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]" onSubmit={onAdjust}>
+                <input
+                  className="h-11 rounded-[11px] border-[3px] border-black/5 bg-[#fafafc] px-3 text-[#1d1d1f]"
+                  inputMode="decimal"
+                  type="number"
+                  step="1"
+                  placeholder="輸入或直接改餘額"
+                  value={adjustAmount}
+                  onChange={(e) => setAdjustAmount(e.target.value)}
+                  aria-label="設定餘額"
+                />
+                <button className="h-11 rounded-[8px] bg-[#0071e3] px-4 text-white" type="submit">
+                  {state.balance == null ? '登記餘額' : '改餘額'}
+                </button>
+              </form>
+            </div>
+          </LiquidGlass>
+        </div>
+        <div className="mt-4">
+          <ModeSwitch mode={state.mode} onChange={(mode) => patch({ mode })} />
+        </div>
       </section>
 
       {advice && (
-        <section className="mt-4 grid gap-3 sm:grid-cols-2">
+        <section className="grid gap-3 px-4 pt-5 sm:grid-cols-2">
           <AdviceCard
             title={state.mode === 'scarcity' ? '今天最多再花' : '今天至少還該花'}
             value={
@@ -249,7 +248,7 @@ export default function App() {
       )}
 
       {conv && (
-        <section className="mt-4 grid grid-cols-2 gap-3">
+        <section className="mt-4 grid grid-cols-2 gap-3 px-4">
           <Ticket label="餘額還能吃" value={`${formatDays(conv.mealsLeft)} 餐`} />
           <Ticket label="餘額還能喝" value={`${formatDays(conv.drinksLeft)} 杯`} />
           <Ticket label="幾天湊一餐" value={`${formatDays(conv.daysPerMeal)} 天`} />
@@ -257,8 +256,8 @@ export default function App() {
         </section>
       )}
 
-      <section className="mt-6 border-t border-ink/15 pt-5">
-        <h2 className="font-display text-xl">菜單點餐</h2>
+      <section className="mt-6 px-4 pt-5">
+        <h2 className="text-[28px] font-normal tracking-[0.2px]">菜單點餐</h2>
         <p className="mt-1 text-sm text-muted">
           已匯入目前填好的品項。餐食還很少，飲料比較齊；之後可再補 xlsx。
         </p>
@@ -285,14 +284,14 @@ export default function App() {
         </div>
       </section>
 
-      <section className="mt-6 border-t border-ink/15 pt-5">
-        <h2 className="font-display text-xl">記一筆開銷</h2>
+      <section className="mt-6 px-4 pt-5">
+        <h2 className="text-[28px] font-normal tracking-[0.2px]">記一筆開銷</h2>
         <p className="mt-1 text-sm text-muted">
           菜單沒有的，或只想快速記金額。
         </p>
         <form className="mt-3 grid gap-2" onSubmit={onSpend}>
           <input
-            className="h-11 rounded-sm border border-ink/20 bg-ticket px-3"
+            className="h-11 rounded-[11px] border-[3px] border-black/5 bg-white px-3"
             inputMode="decimal"
             type="number"
             step="1"
@@ -304,7 +303,7 @@ export default function App() {
             disabled={state.balance == null}
           />
           <input
-            className="h-11 rounded-sm border border-ink/20 bg-ticket px-3"
+            className="h-11 rounded-[11px] border-[3px] border-black/5 bg-white px-3"
             type="text"
             placeholder="備註（選填，例如午餐）"
             value={spendNote}
@@ -312,7 +311,7 @@ export default function App() {
             disabled={state.balance == null}
           />
           <button
-            className="h-11 bg-stamp text-paper disabled:opacity-40"
+            className="h-11 rounded-[8px] bg-[#0071e3] text-white disabled:opacity-40"
             type="submit"
             disabled={state.balance == null}
           >
@@ -321,10 +320,10 @@ export default function App() {
         </form>
       </section>
 
-      <section className="mt-6">
+      <section className="mt-6 px-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-xl">本月紀錄</h2>
-          <button className="text-sm underline" type="button" onClick={exportJson}>
+          <h2 className="text-[28px] font-normal tracking-[0.2px]">本月紀錄</h2>
+          <button className="text-sm text-[#0066cc]" type="button" onClick={exportJson}>
             匯出 JSON
           </button>
         </div>
@@ -355,19 +354,19 @@ export default function App() {
         )}
       </section>
 
-      <section className="mt-8 border-t border-ink/15 pt-5">
-        <h2 className="font-display text-xl">建議回饋</h2>
+      <section className="mt-8 px-4 pt-5">
+        <h2 className="text-[28px] font-normal tracking-[0.2px]">建議回饋</h2>
         <p className="mt-1 text-sm text-muted">
           現在會開 GitHub Issue。獨立 Telegram bot 等你建好再接自動推播。
         </p>
         <textarea
-          className="mt-3 min-h-24 w-full rounded-sm border border-ink/20 bg-ticket p-3"
+          className="mt-3 min-h-24 w-full rounded-[12px] border border-black/10 bg-white p-3"
           placeholder="想改什麼、哪裡算錯、菜單漏了什麼…"
           value={feedback}
           onChange={(e) => setFeedback(e.target.value)}
         />
         <button
-          className="mt-2 h-11 bg-olive px-4 text-paper"
+          className="mt-2 h-11 rounded-[980px] border border-[#0066cc] px-4 text-[#0066cc]"
           type="button"
           onClick={openFeedbackIssue}
         >
@@ -390,17 +389,17 @@ function ModeSwitch({
   onChange: (mode: Mode) => void
 }) {
   return (
-    <div className="grid grid-cols-2 overflow-hidden rounded-sm ring-1 ring-ink/20">
+    <div className="grid grid-cols-2 overflow-hidden rounded-[980px] bg-white/15">
       <button
         type="button"
-        className={`px-3 py-2 text-xs ${mode === 'scarcity' ? 'bg-stamp text-paper' : 'bg-ticket'}`}
+        className={`px-3 py-2 text-[13px] ${mode === 'scarcity' ? 'bg-white text-[#1d1d1f]' : 'text-white/80'}`}
         onClick={() => onChange('scarcity')}
       >
         怕花完
       </button>
       <button
         type="button"
-        className={`px-3 py-2 text-xs ${mode === 'surplus' ? 'bg-olive text-paper' : 'bg-ticket'}`}
+        className={`px-3 py-2 text-[13px] ${mode === 'surplus' ? 'bg-white text-[#1d1d1f]' : 'text-white/80'}`}
         onClick={() => onChange('surplus')}
       >
         花不完
@@ -421,9 +420,9 @@ function AdviceCard({
   warn?: boolean
 }) {
   return (
-    <div className={`bg-ticket p-4 ring-1 ${warn ? 'ring-stamp' : 'ring-ink/15'}`}>
+    <div className={`rounded-[12px] bg-white p-4 ${warn ? 'outline outline-[#0071e3]' : ''}`}>
       <p className="text-xs text-muted">{title}</p>
-      <p className={`mt-1 font-display text-3xl tabular-nums ${warn ? 'text-stamp' : ''}`}>
+      <p className={`mt-1 text-[28px] font-semibold tabular-nums ${warn ? 'text-[#0071e3]' : ''}`}>
         ${formatMoney(value)}
       </p>
       <p className="mt-2 text-xs text-muted">{hint}</p>
@@ -433,9 +432,9 @@ function AdviceCard({
 
 function Ticket({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-dashed border-ink/30 bg-ticket px-3 py-3">
-      <p className="text-[11px] tracking-wider text-muted">{label}</p>
-      <p className="mt-1 font-display text-xl">{value}</p>
+    <div className="rounded-[12px] bg-white px-3 py-3">
+      <p className="text-[11px] text-muted">{label}</p>
+      <p className="mt-1 text-[21px] font-semibold">{value}</p>
     </div>
   )
 }

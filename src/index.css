@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Iwanami", "Source Han Sans TC", "Noto Sans TC", "Segoe UI", sans-serif;
-  --font-display: "Iwanami", "Source Han Serif TC", "Noto Serif TC", serif;
-  --color-paper: #f3ead7;
-  --color-paper-2: #e7d8b8;
-  --color-ink: #1b140c;
-  --color-muted: #6a5a48;
-  --color-stamp: #b42318;
-  --color-olive: #2f4a34;
-  --color-ticket: #fffaf0;
+  --font-sans: system-ui, -apple-system, "SF Pro Text", "Segoe UI", "Noto Sans TC", sans-serif;
+  --font-display: system-ui, -apple-system, "SF Pro Display", "Segoe UI", "Noto Sans TC", sans-serif;
+  --color-paper: #f5f5f7;
+  --color-paper-2: #e8e8ed;
+  --color-ink: #1d1d1f;
+  --color-muted: rgb(0 0 0 / 0.48);
+  --color-stamp: #0071e3;
+  --color-olive: #1d1d1f;
+  --color-ticket: #ffffff;
 }
 
 html,
@@ -20,22 +20,23 @@ body,
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at 12% 8%, #fff8ea 0, transparent 28%),
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 27px,
-      rgb(27 20 12 / 0.04) 28px
-    ),
-    var(--color-paper);
-  color: var(--color-ink);
+  background: #f5f5f7;
+  color: #1d1d1f;
+  letter-spacing: -0.02em;
 }
 
 #root {
   width: min(44rem, 100%);
   margin: 0 auto;
   min-height: 100svh;
+}
+
+.hero-field {
+  background:
+    radial-gradient(circle at 12% 20%, #ff8a4c 0 16%, transparent 17%),
+    radial-gradient(circle at 88% 10%, #5b8cff 0 14%, transparent 15%),
+    radial-gradient(circle at 70% 80%, #3ecf8e 0 18%, transparent 19%),
+    #000;
 }
 
 input[type="number"]::-webkit-outer-spin-button,
