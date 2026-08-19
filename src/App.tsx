@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { MenuPicker } from './MenuPicker.tsx'
 import { formatDays, formatMoney } from './lib/format.ts'
+import { SIZE_LABEL, type TicketLine } from './lib/menu.ts'
 import {
   applyAdjust,
   applySpend,
@@ -224,9 +226,36 @@ export default function App() {
       )}
 
       <section className="mt-6 border-t border-ink/15 pt-5">
+        <h2 className="font-display text-xl">菜單點餐</h2>
+        <p className="mt-1 text-sm text-muted">
+          已匯入目前填好的品項。餐食還很少，飲料比較齊；之後可再補 xlsx。
+        </p>
+        <div className="mt-3">
+          <MenuPicker
+            disabled={state.balance == null}
+            onConfirm={(lines: TicketLine[], total: number) => {
+              if (state.balance == null) return
+              patch({ balance: applySpend(state.balance, total) })
+              addEntry({
+                id: newId(),
+                at: new Date().toISOString(),
+                type: 'spend',
+                amount: total,
+                note: lines.map((line) =>
+                  line.size ? `${line.name} ${SIZE_LABEL[line.size]}` : line.name,
+                ).join('、'),
+                lines,
+              })
+              setNow(new Date())
+            }}
+          />
+        </div>
+      </section>
+
+      <section className="mt-6 border-t border-ink/15 pt-5">
         <h2 className="font-display text-xl">記一筆開銷</h2>
         <p className="mt-1 text-sm text-muted">
-          菜單點餐下一輪才接。現在先手動輸入金額。
+          菜單沒有的，或只想快速記金額。
         </p>
         <form className="mt-3 grid gap-2" onSubmit={onSpend}>
           <input

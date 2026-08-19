@@ -1,5 +1,7 @@
 import { monthKey, taipeiParts } from './month.ts'
 import type { Mode } from './money.ts'
+import type { TicketLine } from './menu.ts'
+import { compiledMenu } from './menu.ts'
 
 export const STORAGE_KEY = 'restaurant-card:v1'
 
@@ -11,6 +13,7 @@ export type LedgerEntry = {
   type: LedgerType
   amount: number
   note?: string
+  lines?: TicketLine[]
 }
 
 export type AppState = {
@@ -30,8 +33,8 @@ export function defaultState(now: Date): AppState {
     mode: 'scarcity',
     balance: null,
     monthKey: monthKey(now),
-    mealUnitPrice: 100,
-    drinkUnitPrice: 30,
+    mealUnitPrice: compiledMenu.mealUnitPriceDefault,
+    drinkUnitPrice: compiledMenu.drinkUnitPriceDefault,
     entries: [],
     history: {},
   }

@@ -1,0 +1,325 @@
+{
+  "restaurantName": "",
+  "mealUnitPriceDefault": 100.0,
+  "drinkUnitPriceDefault": 30.0,
+  "timezone": "Asia/Taipei",
+  "items": [
+    {
+      "category": "buffet",
+      "name": "基本餐",
+      "price": 62.0,
+      "enabled": true
+    },
+    {
+      "category": "nabeyaki",
+      "name": "原味鍋燒",
+      "price": 80.0,
+      "enabled": true
+    },
+    {
+      "category": "nabeyaki",
+      "name": "沙茶鍋燒",
+      "price": 85.0,
+      "enabled": true
+    },
+    {
+      "category": "nabeyaki",
+      "name": "韓式鍋燒",
+      "price": 85.0,
+      "enabled": true
+    },
+    {
+      "category": "noodles",
+      "name": "餛飩麵",
+      "price": 80.0,
+      "enabled": true
+    },
+    {
+      "category": "dessert",
+      "name": "熱壓吐司",
+      "price": 55.0,
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "每日咖啡",
+      "prices": {
+        "hot_s": 40.0,
+        "hot_m": 45.0,
+        "iced_m": 40.0,
+        "xl": 65.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "美式咖啡",
+      "prices": {
+        "hot_s": 45.0,
+        "hot_m": 55.0,
+        "iced_m": 45.0,
+        "xl": 75.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "特調咖啡",
+      "prices": {
+        "hot_s": 45.0,
+        "hot_m": 55.0,
+        "iced_m": 45.0,
+        "xl": 80.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "拿鐵咖啡",
+      "prices": {
+        "hot_s": 55.0,
+        "hot_m": 65.0,
+        "iced_m": 55.0,
+        "xl": 95.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "榛果拿鐵",
+      "prices": {
+        "hot_s": 65.0,
+        "hot_m": 80.0,
+        "iced_m": 65.0,
+        "xl": 110.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "香草拿鐵",
+      "prices": {
+        "hot_s": 65.0,
+        "hot_m": 80.0,
+        "iced_m": 65.0,
+        "xl": 110.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "焦糖拿鐵",
+      "prices": {
+        "hot_s": 65.0,
+        "hot_m": 80.0,
+        "iced_m": 65.0,
+        "xl": 110.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "紅茶",
+      "prices": {
+        "hot_s": 20.0,
+        "hot_m": 25.0,
+        "iced_m": 25.0,
+        "xl": 40.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "奶茶",
+      "prices": {
+        "hot_s": 25.0,
+        "hot_m": 30.0,
+        "iced_m": 30.0,
+        "xl": 45.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "風味奶茶",
+      "prices": {
+        "hot_s": 35.0,
+        "hot_m": 40.0,
+        "iced_m": 40.0,
+        "xl": 55.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "紅茶拿鐵",
+      "prices": {
+        "hot_s": 40.0,
+        "hot_m": 45.0,
+        "iced_m": 45.0,
+        "xl": 65.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "茉莉綠茶",
+      "prices": {
+        "hot_s": 30.0,
+        "hot_m": 35.0,
+        "iced_m": 35.0,
+        "xl": 50.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "綠奶茶",
+      "prices": {
+        "hot_s": 35.0,
+        "hot_m": 40.0,
+        "iced_m": 40.0,
+        "xl": 55.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "風味綠奶茶",
+      "prices": {
+        "hot_s": 45.0,
+        "hot_m": 50.0,
+        "iced_m": 50.0,
+        "xl": 65.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "綠茶拿鐵",
+      "prices": {
+        "hot_s": 50.0,
+        "hot_m": 55.0,
+        "iced_m": 55.0,
+        "xl": 75.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "蜂蜜綠茶",
+      "prices": {
+        "iced_m": 45.0,
+        "xl": 60.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "百香綠(紅)茶",
+      "prices": {
+        "hot_m": 65.0,
+        "iced_m": 65.0,
+        "xl": 80.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "香橙冰茶",
+      "prices": {
+        "iced_m": 50.0,
+        "xl": 70.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "經典可可",
+      "prices": {
+        "hot_s": 55.0,
+        "hot_m": 60.0,
+        "iced_m": 60.0,
+        "xl": 70.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "可可拿鐵",
+      "prices": {
+        "hot_s": 75.0,
+        "hot_m": 80.0,
+        "iced_m": 80.0,
+        "xl": 105.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "風味可可",
+      "prices": {
+        "hot_s": 65.0,
+        "hot_m": 70.0,
+        "iced_m": 70.0,
+        "xl": 90.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "抹茶拿鐵",
+      "prices": {
+        "hot_m": 75.0,
+        "iced_m": 75.0,
+        "xl": 95.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "蜂蜜柚子茶",
+      "prices": {
+        "hot_m": 75.0,
+        "iced_m": 75.0,
+        "xl": 90.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "現打果汁牛奶",
+      "prices": {
+        "iced_m": 75.0,
+        "xl": 95.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "珍珠鮮奶茶",
+      "prices": {
+        "xl": 75.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "全脂牛奶",
+      "prices": {
+        "iced_m": 51.0,
+        "xl": 70.0
+      },
+      "enabled": true
+    },
+    {
+      "category": "drink",
+      "name": "蜂蜜牛奶",
+      "prices": {
+        "iced_m": 60.0,
+        "xl": 80.0
+      },
+      "enabled": true
+    }
+  ]
+}
