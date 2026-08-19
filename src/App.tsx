@@ -178,7 +178,7 @@ export default function App() {
         </button>
       </header>
 
-      <section className="hero-field px-4 pb-8 pt-8 text-white">
+      <section className="bg-[#000] px-4 pb-8 pt-8 text-white">
         <p className="text-[17px] text-white/70">{dayHint}</p>
         <h1 className="mt-1 text-[40px] font-semibold leading-[1.1] tracking-[-0.4px]">餘額</h1>
         <div className="mt-5">

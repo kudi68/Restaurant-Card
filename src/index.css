@@ -31,14 +31,6 @@ body {
   min-height: 100svh;
 }
 
-.hero-field {
-  background:
-    radial-gradient(circle at 12% 20%, #ff8a4c 0 16%, transparent 17%),
-    radial-gradient(circle at 88% 10%, #5b8cff 0 14%, transparent 15%),
-    radial-gradient(circle at 70% 80%, #3ecf8e 0 18%, transparent 19%),
-    #000;
-}
-
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
