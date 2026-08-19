@@ -106,22 +106,31 @@ export function MenuPicker({
         {items.map((item) => (
           <li key={`${item.category}-${item.name}`}>
             {isDrink(item) ? (
-              <button
-                type="button"
-                className="flex w-full items-baseline justify-between bg-ticket px-3 py-2 text-left ring-1 ring-ink/10"
-                onClick={() => {
-                  const size = resolveDrinkSize(item, defaultDrinkSize)
-                  if (size) addDrink(item, size)
-                  else setPendingDrink(item)
-                }}
-              >
-                <span>{item.name}</span>
-                <span className="text-xs text-muted">
-                  {resolveDrinkSize(item, defaultDrinkSize)
-                    ? SIZE_LABEL[defaultDrinkSize]
-                    : '選尺寸'}
-                </span>
-              </button>
+              <div className="flex items-stretch gap-1">
+                <button
+                  type="button"
+                  className="flex min-w-0 flex-1 items-baseline justify-between bg-[var(--surface)] px-3 py-2 text-left ring-1 ring-[var(--line)]"
+                  onClick={() => {
+                    const size = resolveDrinkSize(item, defaultDrinkSize)
+                    if (size) addDrink(item, size)
+                    else setPendingDrink(item)
+                  }}
+                >
+                  <span>{item.name}</span>
+                  <span className="text-xs text-muted">
+                    {resolveDrinkSize(item, defaultDrinkSize)
+                      ? `${SIZE_LABEL[defaultDrinkSize]} $${formatMoney(drinkPrice(item, defaultDrinkSize))}`
+                      : '選尺寸'}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="shrink-0 px-2 text-xs text-[var(--accent-2)] ring-1 ring-[var(--line)]"
+                  onClick={() => setPendingDrink(item)}
+                >
+                  其他尺寸
+                </button>
+              </div>
             ) : (
               <button
                 type="button"
@@ -137,19 +146,20 @@ export function MenuPicker({
       </ul>
 
       {pendingDrink && (
-        <div className="mt-3 bg-paper-2 p-3 ring-1 ring-ink/15">
+        <div className="mt-3 bg-[var(--surface-2)] p-3 ring-1 ring-[var(--line)]">
           <p className="text-sm">
-            {pendingDrink.name} · 選容量
+            {pendingDrink.name} · 選冷熱／大小
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             {availableSizes(pendingDrink).map((size) => (
               <button
                 key={size}
                 type="button"
-                className="bg-ink px-3 py-2 text-sm text-paper"
+                className={`px-3 py-2 text-sm ${size === defaultDrinkSize ? 'bg-[var(--accent)] text-white' : 'bg-[var(--surface)] ring-1 ring-[var(--line)]'}`}
                 onClick={() => addDrink(pendingDrink, size)}
               >
                 {SIZE_LABEL[size]} ${formatMoney(drinkPrice(pendingDrink, size))}
+                {size === defaultDrinkSize ? ' · 預設' : ''}
               </button>
             ))}
             <button type="button" className="px-3 py-2 text-sm underline" onClick={() => setPendingDrink(null)}>
@@ -179,7 +189,7 @@ export function MenuPicker({
           </ul>
           <div className="mt-3 flex items-center justify-between">
             <p className="font-display text-xl">合計 ${formatMoney(total)}</p>
-            <button type="button" className="h-10 bg-stamp px-4 text-paper" onClick={confirm}>
+            <button type="button" className="h-10 rounded-[980px] bg-[var(--accent)] px-4 text-white" onClick={confirm}>
               確認扣款
             </button>
           </div>
