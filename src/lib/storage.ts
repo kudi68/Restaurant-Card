@@ -7,6 +7,7 @@ export const STORAGE_KEY = 'restaurant-card:v1'
 
 export type LedgerType = 'spend' | 'adjust'
 export type DefaultDrinkSize = Extract<SizeKey, 'hot_m' | 'iced_m'>
+export type Appearance = 'light' | 'dark'
 
 export type LedgerEntry = {
   id: string
@@ -27,6 +28,7 @@ export type AppState = {
   dayCountMode: DayCountMode
   customRemainingDays: number
   defaultDrinkSize: DefaultDrinkSize
+  appearance: Appearance
   entries: LedgerEntry[]
   history: Record<string, LedgerEntry[]>
 }
@@ -42,6 +44,7 @@ export function defaultState(now: Date): AppState {
     dayCountMode: 'calendar',
     customRemainingDays: remainingDays(now),
     defaultDrinkSize: 'iced_m',
+    appearance: 'light',
     entries: [],
     history: {},
   }
@@ -70,6 +73,10 @@ function isDefaultDrinkSize(value: unknown): value is DefaultDrinkSize {
   return value === 'hot_m' || value === 'iced_m'
 }
 
+function isAppearance(value: unknown): value is Appearance {
+  return value === 'light' || value === 'dark'
+}
+
 export function normalizeState(raw: Record<string, unknown>, now: Date): AppState {
   const base = defaultState(now)
   const entries = Array.isArray(raw.entries) ? raw.entries.filter(isLedgerEntry) : base.entries
@@ -92,6 +99,7 @@ export function normalizeState(raw: Record<string, unknown>, now: Date): AppStat
     defaultDrinkSize: isDefaultDrinkSize(raw.defaultDrinkSize)
       ? raw.defaultDrinkSize
       : base.defaultDrinkSize,
+    appearance: isAppearance(raw.appearance) ? raw.appearance : base.appearance,
     entries,
     history,
   }

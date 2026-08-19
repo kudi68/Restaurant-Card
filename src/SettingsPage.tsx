@@ -1,6 +1,6 @@
 import { planningDays, remainingDays, remainingWeekdays, type DayCountMode } from './lib/month.ts'
 import { SIZE_LABEL } from './lib/menu.ts'
-import type { AppState, DefaultDrinkSize } from './lib/storage.ts'
+import type { AppState, Appearance, DefaultDrinkSize } from './lib/storage.ts'
 
 const DAY_OPTIONS: Array<{ id: DayCountMode; title: string; hint: string }> = [
   { id: 'calendar', title: '算到月底每一天', hint: '含週末，從今天數到這個月最後一天。' },
@@ -30,14 +30,34 @@ export function SettingsPage({
   return (
     <div className="px-4 py-6 sm:px-6 sm:py-10">
       <header className="mb-6 border-b-2 border-dashed border-ink/20 pb-4">
-        <button type="button" className="text-sm text-[#0066cc]" onClick={onBack}>
+        <button type="button" className="text-sm text-[var(--accent-2)]" onClick={onBack}>
           ← 回餐卡
         </button>
         <h1 className="mt-3 text-[40px] font-semibold leading-[1.1]">個人化設定</h1>
         <p className="mt-1 text-sm text-muted">這些只存在這個瀏覽器，換月餘額仍會歸零。</p>
       </header>
 
-      <section className="bg-ticket p-4 ring-1 ring-ink/15">
+      <section className="bg-ticket p-4">
+        <h2 className="text-[21px] font-semibold">外觀</h2>
+        <p className="mt-1 text-sm text-muted">淺色是 Apple 全淺，深色是考古豹。</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {([
+            { id: 'light' as Appearance, label: '淺色' },
+            { id: 'dark' as Appearance, label: '深色' },
+          ]).map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className={`h-11 rounded-[980px] ${state.appearance === option.id ? 'bg-[var(--accent)] text-white' : 'bg-paper ring-1 ring-[var(--line)]'}`}
+              onClick={() => onChange({ appearance: option.id })}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-4 bg-ticket p-4">
         <h2 className="font-display text-xl">天數怎麼算</h2>
         <p className="mt-1 text-sm text-muted">日均 = 餘額 ÷ 這裡算出來的天數。</p>
         <ul className="mt-3 space-y-2">
@@ -118,7 +138,7 @@ export function SettingsPage({
             <button
               key={size}
               type="button"
-              className={`h-11 ${state.defaultDrinkSize === size ? 'bg-ink text-paper' : 'bg-paper ring-1 ring-ink/15'}`}
+              className={`h-11 rounded-[980px] ${state.defaultDrinkSize === size ? 'bg-[var(--accent)] text-white' : 'bg-paper ring-1 ring-[var(--line)]'}`}
               onClick={() => onChange({ defaultDrinkSize: size })}
             >
               {SIZE_LABEL[size]}
@@ -127,7 +147,7 @@ export function SettingsPage({
         </div>
       </section>
 
-      <button type="button" className="mt-6 h-11 w-full bg-ink text-paper" onClick={onBack}>
+      <button type="button" className="mt-6 h-11 w-full rounded-[980px] bg-[var(--accent)] text-white" onClick={onBack}>
         完成，回餐卡
       </button>
     </div>

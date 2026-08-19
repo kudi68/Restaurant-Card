@@ -31,6 +31,7 @@ describe('parseState', () => {
     expect(state.dayCountMode).toBe('calendar')
     expect(state.customRemainingDays).toBe(13)
     expect(state.defaultDrinkSize).toBe('iced_m')
+    expect(state.appearance).toBe('light')
   })
 
   it('returns a fresh state when JSON is corrupt', () => {
