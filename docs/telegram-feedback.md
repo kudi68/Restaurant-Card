@@ -26,4 +26,9 @@ TELEGRAM_CHAT_ID=123456789
 5. 瀏覽器打開：`https://api.telegram.org/bot<TOKEN>/getUpdates`
 6. JSON 裡的 `message.chat.id` → `TELEGRAM_CHAT_ID`（對自己通常是正整數）
 
-`.env.example` 是給別人看的空範本；真正的值只放 `.env.local`。
+Token 正確但出現 `chat not found`、或 `getUpdates` 是空的：
+
+1. 打開 **這個新 bot** 的對話（不是 Hermes）
+2. 傳 `/start` 或 `hi`
+3. 再打開 `getUpdates`，複製**這次**出現的 `message.chat.id`
+4. 覆蓋 `.env.local` 的 `TELEGRAM_CHAT_ID`

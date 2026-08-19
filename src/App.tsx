@@ -44,6 +44,7 @@ export default function App() {
   const [spendNote, setSpendNote] = useState('')
   const [adjustAmount, setAdjustAmount] = useState('')
   const [feedback, setFeedback] = useState('')
+  const [feedbackStatus, setFeedbackStatus] = useState('')
   const [screen, setScreen] = useState<'home' | 'settings'>('home')
 
   useEffect(() => {
@@ -135,6 +136,37 @@ export default function App() {
     a.download = `restaurant-card-${state.monthKey}.json`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  async function sendTelegramFeedback() {
+    const message = feedback.trim()
+    if (!message) {
+      setFeedbackStatus('先寫一點內容')
+      return
+    }
+    setFeedbackStatus('送出中…')
+    try {
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          message: `${message}\n月份：${state.monthKey}\n模式：${state.mode}`,
+        }),
+      })
+      const data = (await response.json()) as { ok?: boolean; error?: string }
+      if (!response.ok || !data.ok) {
+        setFeedbackStatus(
+          data.error === 'telegram_failed'
+            ? 'Telegram 拒絕了（多半是還沒對這個 bot 傳過話，或 chat id 不對）'
+            : '現在送不到 Telegram，請改開 GitHub Issue',
+        )
+        return
+      }
+      setFeedback('')
+      setFeedbackStatus('已送到 Telegram')
+    } catch {
+      setFeedbackStatus('網路失敗，請改開 GitHub Issue')
+    }
   }
 
   function openFeedbackIssue() {
@@ -354,7 +386,7 @@ export default function App() {
       <section className="mt-8 px-4 pt-5">
         <h2 className="text-[28px] font-normal tracking-[0.2px]">建議回饋</h2>
         <p className="mt-1 text-sm text-muted">
-          現在會開 GitHub Issue。獨立 Telegram bot 等你建好再接自動推播。
+          送到 Telegram。本機 dev 才接得上；上線後還要部署 API。GitHub Issue 仍可用。
         </p>
         <textarea
           className="mt-3 min-h-24 w-full rounded-[12px] border border-[var(--line)] bg-[var(--surface)] p-3"
@@ -362,13 +394,23 @@ export default function App() {
           value={feedback}
           onChange={(e) => setFeedback(e.target.value)}
         />
-        <button
-          className="mt-2 h-11 rounded-[980px] border border-[var(--accent-2)] px-4 text-[var(--accent-2)]"
-          type="button"
-          onClick={openFeedbackIssue}
-        >
-          開 GitHub Issue
-        </button>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button
+            className="h-11 rounded-[980px] bg-[var(--accent)] px-4 text-white"
+            type="button"
+            onClick={() => void sendTelegramFeedback()}
+          >
+            送到 Telegram
+          </button>
+          <button
+            className="h-11 rounded-[980px] border border-[var(--accent-2)] px-4 text-[var(--accent-2)]"
+            type="button"
+            onClick={openFeedbackIssue}
+          >
+            開 GitHub Issue
+          </button>
+        </div>
+        {feedbackStatus && <p className="mt-2 text-sm text-muted">{feedbackStatus}</p>}
       </section>
 
       <p className="mt-8 text-center text-xs text-muted">
