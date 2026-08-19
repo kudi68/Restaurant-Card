@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Iwanami", "Source Han Sans TC", "Noto Sans TC", "Segoe UI", sans-serif;
+  --font-display: "Iwanami", "Source Han Serif TC", "Noto Serif TC", serif;
+  --color-paper: #f3ead7;
+  --color-paper-2: #e7d8b8;
+  --color-ink: #1b140c;
+  --color-muted: #6a5a48;
+  --color-stamp: #b42318;
+  --color-olive: #2f4a34;
+  --color-ticket: #fffaf0;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 12% 8%, #fff8ea 0, transparent 28%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 27px,
+      rgb(27 20 12 / 0.04) 28px
+    ),
+    var(--color-paper);
+  color: var(--color-ink);
+}
+
+#root {
+  width: min(44rem, 100%);
+  margin: 0 auto;
+  min-height: 100svh;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
