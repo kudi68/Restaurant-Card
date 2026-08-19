@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { PlanPage } from './PlanPage.tsx'
 import { MenuPicker } from './MenuPicker.tsx'
 import { SettingsPage } from './SettingsPage.tsx'
 import { TurnstileWidget } from './TurnstileWidget.tsx'
+import { createBackup, MAX_BACKUP_BYTES, restoreBackup, type ValidBackup } from './lib/backup.ts'
 import { formatMoney } from './lib/format.ts'
 import { SIZE_LABEL, type TicketLine } from './lib/menu.ts'
 import {
@@ -62,7 +63,12 @@ export default function App() {
   const [feedbackKind, setFeedbackKind] = useState('一般建議')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileResetVersion, setTurnstileResetVersion] = useState(0)
+  const [turnstileRetryVersion, setTurnstileRetryVersion] = useState(0)
+  const [turnstileStatus, setTurnstileStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [storageWarning, setStorageWarning] = useState(false)
+  const [backupPreview, setBackupPreview] = useState<ValidBackup | null>(null)
+  const [backupStatus, setBackupStatus] = useState('')
+  const backupReadVersion = useRef(0)
   const [screen, setScreen] = useState<'home' | 'plan' | 'settings'>('home')
 
   useEffect(() => {
@@ -174,16 +180,64 @@ export default function App() {
     setNow(new Date())
   }
 
-  function exportJson() {
-    const blob = new Blob([JSON.stringify(state, null, 2)], {
-      type: 'application/json',
-    })
+  function downloadText(content: string, filename: string) {
+    const blob = new Blob([content], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `restaurant-card-${state.monthKey}.json`
+    a.download = filename
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  function exportBackup() {
+    downloadText(createBackup(state, planDraft, new Date()), `restaurant-card-backup-${state.monthKey}.json`)
+    setBackupStatus('已匯出完整備份（包含餐卡與規劃購物車）')
+  }
+
+  async function previewBackup(file: File | undefined) {
+    if (!file) return
+    const readVersion = backupReadVersion.current + 1
+    backupReadVersion.current = readVersion
+    if (file.size > MAX_BACKUP_BYTES) {
+      setBackupPreview(null)
+      setBackupStatus('備份檔太大，沒有套用。')
+      return
+    }
+    let raw: string
+    try {
+      raw = await file.text()
+    } catch {
+      if (readVersion === backupReadVersion.current) {
+        setBackupPreview(null)
+        setBackupStatus('讀取備份檔失敗，沒有修改目前資料。')
+      }
+      return
+    }
+    if (readVersion !== backupReadVersion.current) return
+    const result = restoreBackup(raw, new Date())
+    if (!result.ok) {
+      setBackupPreview(null)
+      setBackupStatus(result.error)
+      return
+    }
+    setBackupPreview(result)
+    setBackupStatus('已讀取備份，請確認內容後再覆蓋目前資料')
+  }
+
+  function confirmBackupRestore() {
+    if (!backupPreview) return
+    const currentMonth = monthKey(new Date())
+    if (backupPreview.state.monthKey !== currentMonth || backupPreview.plan.monthKey !== currentMonth) {
+      setBackupPreview(null)
+      setBackupStatus(`備份月份不是目前的 ${currentMonth}，為避免靜默清除資料，沒有套用。`)
+      return
+    }
+    downloadText(createBackup(state, planDraft, new Date()), `restaurant-card-before-restore-${state.monthKey}.json`)
+    setState(backupPreview.state)
+    setPlanDraft(backupPreview.plan)
+    setBackupPreview(null)
+    setBackupStatus('已還原備份；覆蓋前的原資料也已先下載')
   }
 
   async function sendTelegramFeedback() {
@@ -204,6 +258,7 @@ export default function App() {
         body: JSON.stringify({
           message: `【${feedbackKind}】\n${message}\n月份：${state.monthKey}\n模式：${state.mode}`,
           turnstileToken,
+          requestId: crypto.randomUUID(),
         }),
       })
       const data = (await response.json()) as { ok?: boolean; error?: string }
@@ -211,6 +266,8 @@ export default function App() {
         setFeedbackStatus(
           data.error === 'verification_failed'
             ? '驗證已過期，請重新完成防機器人驗證'
+            : data.error === 'telegram_delivery_unknown'
+              ? 'Telegram 送達狀態未知；請先查看 Telegram，若要重送請重新完成驗證'
             : data.error === 'telegram_failed'
               ? 'Telegram 暫時無法接收，請稍後再試或改開 GitHub Issue'
             : '現在送不到 Telegram，請改開 GitHub Issue',
@@ -220,7 +277,7 @@ export default function App() {
       setFeedback('')
       setFeedbackStatus('已送到 Telegram')
     } catch {
-      setFeedbackStatus('網路失敗，請改開 GitHub Issue')
+      setFeedbackStatus('送達狀態未知；請先查看 Telegram，若要重送請重新完成驗證')
     } finally {
       setTurnstileToken('')
       setTurnstileResetVersion((version) => version + 1)
@@ -230,6 +287,10 @@ export default function App() {
   const onTurnstileToken = useCallback((token: string) => {
     setTurnstileToken(token)
     if (token) setFeedbackStatus('')
+  }, [])
+
+  const onTurnstileStatus = useCallback((status: 'loading' | 'ready' | 'error') => {
+    setTurnstileStatus(status)
   }, [])
 
   function openFeedbackIssue() {
@@ -261,6 +322,12 @@ export default function App() {
           now={now}
           onChange={patch}
           onBack={() => setScreen('home')}
+          onExportBackup={exportBackup}
+          onPreviewBackup={previewBackup}
+          backupPreview={backupPreview}
+          backupStatus={backupStatus}
+          onConfirmBackupRestore={confirmBackupRestore}
+          onCancelBackupRestore={() => setBackupPreview(null)}
         />
         <AppNav screen={screen} onChange={setScreen} />
       </>
@@ -430,8 +497,8 @@ export default function App() {
       <section className="mt-6 px-4">
         <div className="flex items-center justify-between">
           <h2 className="text-[28px] font-normal tracking-[0.2px]">本月紀錄</h2>
-          <button className="text-sm text-[var(--accent-2)]" type="button" onClick={exportJson}>
-            匯出 JSON
+          <button className="text-sm text-[var(--accent-2)]" type="button" onClick={exportBackup}>
+            匯出完整備份
           </button>
         </div>
         {state.entries.length === 0 ? (
@@ -487,10 +554,17 @@ export default function App() {
             siteKey={TURNSTILE_SITE_KEY}
             theme={state.appearance}
             resetVersion={turnstileResetVersion}
+            retryVersion={turnstileRetryVersion}
             onToken={onTurnstileToken}
+            onStatus={onTurnstileStatus}
           />
         ) : (
           <p className="mt-2 text-sm text-muted">此備用站不提供 Telegram 回饋，請改用 GitHub Issue。</p>
+        )}
+        {TURNSTILE_SITE_KEY && turnstileStatus === 'error' && (
+          <button type="button" className="mt-2 text-sm text-[var(--accent-2)] underline" onClick={() => { setTurnstileToken(''); setTurnstileRetryVersion((version) => version + 1) }}>
+            重新載入防機器人驗證
+          </button>
         )}
         <div className="mt-2 flex flex-wrap gap-2">
           {TURNSTILE_SITE_KEY && (

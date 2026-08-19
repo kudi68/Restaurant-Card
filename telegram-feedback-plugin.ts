@@ -127,6 +127,8 @@ async function handleFeedback(
     sendJson(res, 403, { ok: false, error: 'verification_failed' })
     return
   }
+  const suppliedRequestId = typeof payload.requestId === 'string' ? payload.requestId.trim() : ''
+  const requestId = /^[A-Za-z0-9-]{1,64}$/.test(suppliedRequestId) ? suppliedRequestId : crypto.randomUUID()
 
   const verified = await verifyTurnstile({
     secret: turnstileSecret,
@@ -145,7 +147,7 @@ async function handleFeedback(
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         chat_id: chatId,
-        text: `餐卡建議\n${message}\n時間：${new Date().toISOString()}`,
+        text: `餐卡建議\n${message}\n請求編號：${requestId}\n時間：${new Date().toISOString()}`,
       }),
       signal: AbortSignal.timeout(10_000),
     })
@@ -153,9 +155,18 @@ async function handleFeedback(
       sendJson(res, 502, { ok: false, error: 'telegram_failed' })
       return
     }
+    const telegramBody: unknown = await telegram.json()
+    if (!telegramBody || typeof telegramBody !== 'object' || (telegramBody as { ok?: unknown }).ok !== true) {
+      sendJson(res, 502, { ok: false, error: 'telegram_failed' })
+      return
+    }
     sendJson(res, 200, { ok: true })
-  } catch {
-    sendJson(res, 502, { ok: false, error: 'telegram_failed' })
+  } catch (error) {
+    const errorName = error instanceof Error ? error.name : ''
+    const errorCode = errorName === 'TimeoutError' || errorName === 'AbortError'
+      ? 'telegram_delivery_unknown'
+      : 'telegram_failed'
+    sendJson(res, 502, { ok: false, error: errorCode })
   }
 }
 

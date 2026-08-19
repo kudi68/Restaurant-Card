@@ -56,18 +56,23 @@ export function TurnstileWidget({
   siteKey,
   theme,
   resetVersion,
+  retryVersion,
   onToken,
+  onStatus,
 }: {
   siteKey: string
   theme: 'light' | 'dark'
   resetVersion: number
+  retryVersion: number
   onToken: (token: string) => void
+  onStatus: (status: 'loading' | 'ready' | 'error') => void
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
+    onStatus('loading')
     void loadTurnstile()
       .then(() => {
         if (cancelled || !containerRef.current || !window.turnstile) return
@@ -77,12 +82,13 @@ export function TurnstileWidget({
           theme,
           size: 'flexible',
           callback: onToken,
-          'expired-callback': () => onToken(''),
-          'error-callback': () => onToken(''),
+          'expired-callback': () => { onToken(''); onStatus('error') },
+          'error-callback': () => { onToken(''); onStatus('error') },
         })
+        onStatus('ready')
       })
       .catch(() => {
-        if (!cancelled) onToken('')
+        if (!cancelled) { onToken(''); onStatus('error') }
       })
 
     return () => {
@@ -92,7 +98,7 @@ export function TurnstileWidget({
       }
       widgetIdRef.current = null
     }
-  }, [onToken, siteKey, theme])
+  }, [onStatus, onToken, retryVersion, siteKey, theme])
 
   useEffect(() => {
     if (resetVersion > 0 && widgetIdRef.current && window.turnstile) {

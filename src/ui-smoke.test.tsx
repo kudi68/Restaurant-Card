@@ -39,6 +39,8 @@ describe('App navigation smoke test', () => {
 
     await act(async () => button('設定').click())
     expect(container.textContent).toContain('每週打算吃哪些餐')
+    expect(container.textContent).toContain('資料備份')
+    expect(container.textContent).toContain('匯出完整備份')
     expect(container.querySelector('[aria-label="星期一午餐"]')).not.toBeNull()
     expect(container.querySelector('[aria-label="星期日晚餐"]')).not.toBeNull()
 
@@ -47,10 +49,32 @@ describe('App navigation smoke test', () => {
     expect(container.textContent).toContain('若照購物車買，月底還剩')
 
     const before = JSON.parse(localStorage.getItem('restaurant-card:v1') ?? '{}') as { balance?: number; entries?: unknown[] }
-    await act(async () => button('加入試算').click())
+    await act(async () => {
+      const addButton = Array.from(container?.querySelectorAll('button') ?? [])
+        .find((element) => {
+          const label = element.textContent?.trim() ?? ''
+          return label.startsWith('加入試算') || label.startsWith('仍要加入')
+        })
+      if (!addButton) throw new Error('add cart button not found')
+      addButton.click()
+    })
     const after = JSON.parse(localStorage.getItem('restaurant-card:v1') ?? '{}') as { balance?: number; entries?: unknown[] }
     expect(after.balance).toBe(before.balance)
     expect(after.entries).toEqual(before.entries)
+    await act(async () => button('復原').click())
+    const restoredPlan = JSON.parse(localStorage.getItem('restaurant-card:plan:v1') ?? '{}') as { lines?: unknown[] }
+    expect(restoredPlan.lines).toEqual([])
+
+    await act(async () => {
+      const addButton = Array.from(container?.querySelectorAll('button') ?? [])
+        .find((element) => (element.textContent?.trim() ?? '').startsWith('加入試算') || (element.textContent?.trim() ?? '').startsWith('仍要加入'))
+      if (!addButton) throw new Error('second add cart button not found')
+      addButton.click()
+    })
+    const eatenCheckbox = container?.querySelector('input[type="checkbox"]') as HTMLInputElement | null
+    if (!eatenCheckbox || eatenCheckbox.disabled) throw new Error('eaten checkbox not available')
+    await act(async () => eatenCheckbox.click())
+    expect(Array.from(container?.querySelectorAll('button') ?? []).some((element) => element.textContent?.trim() === '復原')).toBe(false)
 
     await act(async () => root.unmount())
   })

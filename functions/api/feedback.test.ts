@@ -96,7 +96,7 @@ describe('feedback Pages Function', () => {
       return new Response(JSON.stringify({ ok: true }), { status: 200 })
     })
     const response = await onRequest({
-      request: request('POST', { message: 'hello', turnstileToken: 'verified-once' }, {
+      request: request('POST', { message: 'hello', turnstileToken: 'verified-once', requestId: 'abc123' }, {
         'content-type': 'application/json',
         origin: 'https://restaurant-card.pages.dev',
       }),
@@ -112,6 +112,7 @@ describe('feedback Pages Function', () => {
     expect(externalFetch).toHaveBeenCalledTimes(2)
     expect(String(externalFetch.mock.calls[0]?.[0])).toContain('/siteverify')
     expect(String(externalFetch.mock.calls[1]?.[0])).toContain('api.telegram.org')
+    expect(String((externalFetch.mock.calls[1]?.[1] as RequestInit | undefined)?.body)).toContain('abc123')
   })
 
   it('returns a generic 502 when the Telegram network request throws', async () => {
@@ -123,7 +124,7 @@ describe('feedback Pages Function', () => {
       }), { status: 200 }))
       .mockRejectedValueOnce(new Error('outgoing URL contained a sensitive path'))
     const response = await onRequest({
-      request: request('POST', { message: 'hello', turnstileToken: 'verified-once' }, {
+      request: request('POST', { message: 'hello', turnstileToken: 'verified-once', requestId: 'abc123' }, {
         'content-type': 'application/json',
         origin: 'https://restaurant-card.pages.dev',
       }),
@@ -206,5 +207,30 @@ describe('feedback Pages Function', () => {
     })
     expect(response.status).toBe(403)
     expect(externalFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('reports unknown delivery when Telegram times out', async () => {
+    const timeout = Object.assign(new Error('timed out'), { name: 'TimeoutError' })
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        success: true,
+        action: 'feedback',
+        hostname: 'restaurant-card.pages.dev',
+      }), { status: 200 }))
+      .mockRejectedValueOnce(timeout)
+    const response = await onRequest({
+      request: request('POST', { message: 'hello', turnstileToken: 'unverified', requestId: 'timeout123' }, {
+        'content-type': 'application/json',
+        origin: 'https://restaurant-card.pages.dev',
+      }),
+      env: {
+        TELEGRAM_BOT_TOKEN: 'test-bot-token',
+        TELEGRAM_CHAT_ID: 'test-chat-id',
+        TURNSTILE_SECRET: 'test-turnstile-secret',
+        TURNSTILE_HOSTNAMES: 'restaurant-card.pages.dev',
+      },
+    })
+    expect(response.status).toBe(502)
+    expect(await response.text()).toBe('{"ok":false,"error":"telegram_delivery_unknown"}')
   })
 })

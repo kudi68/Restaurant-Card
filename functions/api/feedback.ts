@@ -177,6 +177,8 @@ async function handlePost(context: FeedbackContext): Promise<Response> {
       headers,
     })
   }
+  const suppliedRequestId = typeof payload.requestId === "string" ? payload.requestId.trim() : ""
+  const requestId = /^[A-Za-z0-9-]{1,64}$/.test(suppliedRequestId) ? suppliedRequestId : crypto.randomUUID()
   const verified = await verifyTurnstile({
     secret: turnstileSecret,
     response: turnstileToken,
@@ -193,6 +195,7 @@ async function handlePost(context: FeedbackContext): Promise<Response> {
   const text = [
     "餐卡建議",
     message,
+    `請求編號：${requestId}`,
     contact ? `聯絡：${contact}` : "",
     `時間：${new Date().toISOString()}`,
   ]
@@ -210,13 +213,24 @@ async function handlePost(context: FeedbackContext): Promise<Response> {
       body: new URLSearchParams({ chat_id: chatId, text }),
       signal: AbortSignal.timeout(10_000),
     })
-  } catch {
-    return new Response(JSON.stringify({ ok: false, error: "telegram_failed" }), {
+  } catch (error) {
+    const errorName = error instanceof Error ? error.name : ""
+    const errorCode = errorName === "TimeoutError" || errorName === "AbortError"
+      ? "telegram_delivery_unknown"
+      : "telegram_failed"
+    return new Response(JSON.stringify({ ok: false, error: errorCode }), {
       status: 502,
       headers,
     })
   }
   if (!telegram.ok) {
+    return new Response(JSON.stringify({ ok: false, error: "telegram_failed" }), {
+      status: 502,
+      headers,
+    })
+  }
+  const telegramBody: unknown = await telegram.json()
+  if (!telegramBody || typeof telegramBody !== "object" || (telegramBody as { ok?: unknown }).ok !== true) {
     return new Response(JSON.stringify({ ok: false, error: "telegram_failed" }), {
       status: 502,
       headers,

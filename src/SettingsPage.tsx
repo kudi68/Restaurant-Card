@@ -8,6 +8,7 @@ import {
   type WeekdayKey,
 } from './lib/leftover.ts'
 import type { AppState, Appearance, DefaultDrinkSize } from './lib/storage.ts'
+import type { ValidBackup } from './lib/backup.ts'
 
 const DAY_OPTIONS: Array<{ id: DayCountMode; title: string; hint: string }> = [
   { id: 'calendar', title: '算到月底每一天', hint: '只影響首頁日均分母，必要餐費仍照七日習慣。' },
@@ -20,11 +21,28 @@ const DAY_LABEL: Record<WeekdayKey, string> = {
   fri: '星期五', sat: '星期六', sun: '星期日',
 }
 
-export function SettingsPage({ state, now, onChange, onBack }: {
+export function SettingsPage({
+  state,
+  now,
+  onChange,
+  onBack,
+  onExportBackup,
+  onPreviewBackup,
+  backupPreview,
+  backupStatus,
+  onConfirmBackupRestore,
+  onCancelBackupRestore,
+}: {
   state: AppState
   now: Date
   onChange: (partial: Partial<AppState>) => void
   onBack: () => void
+  onExportBackup: () => void
+  onPreviewBackup: (file: File | undefined) => void | Promise<void>
+  backupPreview: ValidBackup | null
+  backupStatus: string
+  onConfirmBackupRestore: () => void
+  onCancelBackupRestore: () => void
 }) {
   const calendar = remainingDays(now)
   const weekdays = remainingWeekdays(now)
@@ -59,6 +77,36 @@ export function SettingsPage({ state, now, onChange, onBack }: {
         <h1 className="mt-3 text-[40px] font-semibold leading-[1.1]">個人化設定</h1>
         <p className="mt-1 text-sm text-muted">這些只存在這個瀏覽器；七日習慣換月會保留。</p>
       </header>
+
+      <section className="bg-ticket p-4 ring-1 ring-ink/15">
+        <h2 className="text-[21px] font-semibold">資料備份</h2>
+        <p className="mt-1 text-sm text-muted">完整備份包含餘額、紀錄、七日習慣、今日已吃與規劃購物車。匯入會先預覽，不會直接覆蓋。</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <button type="button" className="h-11 rounded-[980px] bg-[var(--accent)] text-white" onClick={onExportBackup}>匯出完整備份</button>
+          <label className="flex h-11 cursor-pointer items-center justify-center rounded-[980px] border border-[var(--accent-2)] text-[var(--accent-2)]">
+            選擇備份檔
+            <input className="sr-only" type="file" accept="application/json,.json" onChange={(event) => { void onPreviewBackup(event.target.files?.[0]); event.currentTarget.value = '' }} />
+          </label>
+        </div>
+        {backupStatus && <p className="mt-2 text-sm text-muted">{backupStatus}</p>}
+        {backupPreview && (
+          <div className="mt-3 rounded-[12px] bg-paper p-3 ring-1 ring-[var(--accent)]">
+            <p className="font-medium">匯入預覽</p>
+            <dl className="mt-2 grid grid-cols-2 gap-y-1 text-sm">
+              <dt className="text-muted">備份時間</dt><dd>{new Date(backupPreview.summary.exportedAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}</dd>
+              <dt className="text-muted">月份</dt><dd>{backupPreview.summary.monthKey}</dd>
+              <dt className="text-muted">餘額</dt><dd>{backupPreview.summary.balance == null ? '尚未登記' : `$${backupPreview.summary.balance}`}</dd>
+              <dt className="text-muted">紀錄</dt><dd>{backupPreview.summary.entryCount} 筆</dd>
+              <dt className="text-muted">購物車</dt><dd>{backupPreview.summary.planLineCount} 項</dd>
+            </dl>
+            <p className="mt-3 text-xs text-[var(--accent)]">確認後會覆蓋目前資料；覆蓋前會先自動下載目前完整備份。</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button type="button" className="h-10 rounded-[980px] bg-[var(--accent)] text-white" onClick={onConfirmBackupRestore}>確認覆蓋</button>
+              <button type="button" className="h-10 rounded-[980px] border border-[var(--line)]" onClick={onCancelBackupRestore}>取消</button>
+            </div>
+          </div>
+        )}
+      </section>
 
       <section className="bg-ticket p-4">
         <h2 className="text-[21px] font-semibold">外觀</h2>

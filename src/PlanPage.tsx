@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { formatMoney } from './lib/format.ts'
 import {
   availableSizes,
@@ -46,6 +46,8 @@ export function PlanPage({ state, now, draft, onDraftChange }: {
     ? state.defaultDrinkSize
     : selectedDrink ? availableSizes(selectedDrink)[0] : undefined
   const [selectedSize, setSelectedSize] = useState<SizeKey | undefined>(preferredSize)
+  const [cartMessage, setCartMessage] = useState('')
+  const [undoLines, setUndoLines] = useState<PlanCartLine[] | null>(null)
   const selectDrink = (name: string) => {
     setSelectedName(name)
     const drink = drinks.find((candidate) => candidate.name === name)
@@ -57,11 +59,35 @@ export function PlanPage({ state, now, draft, onDraftChange }: {
 
   const total = cartTotal(draft.lines, compiledMenu.items)
   const projected = leftover == null ? null : projectedAfterCart(leftover, draft.lines, compiledMenu.items)
+  const selectedPrice = selectedDrink && selectedSize ? drinkPrice(selectedDrink, selectedSize) : null
+  const linesAfterAdd = selectedDrink && selectedSize && selectedPrice != null
+    ? addPlanLine(draft.lines, { category: 'drink', name: selectedDrink.name, size: selectedSize, qty: 1 })
+    : draft.lines
+  const projectedAfterAdd = leftover == null ? null : projectedAfterCart(leftover, linesAfterAdd, compiledMenu.items)
   const todayMeals = mealsOnDate(state.habit, now)
   const patchDraft = (partial: Partial<PlanDraft>) => onDraftChange({ ...draft, ...partial })
+  useEffect(() => {
+    if (!undoLines) return
+    const timer = window.setTimeout(() => setUndoLines(null), 5000)
+    return () => window.clearTimeout(timer)
+  }, [undoLines])
   const addSelected = () => {
-    if (!selectedDrink || !selectedSize || drinkPrice(selectedDrink, selectedSize) == null) return
-    patchDraft({ lines: addPlanLine(draft.lines, { category: 'drink', name: selectedDrink.name, size: selectedSize, qty: 1 }) })
+    if (!selectedDrink || !selectedSize || selectedPrice == null) return
+    setUndoLines(draft.lines)
+    patchDraft({ lines: linesAfterAdd })
+    setCartMessage(`${selectedDrink.name} ${SIZE_LABEL[selectedSize]} 已加入`)
+  }
+  const changeQuantity = (line: PlanCartLine, qty: number) => {
+    setUndoLines(null)
+    patchDraft({ lines: setPlanLineQuantity(draft.lines, line, qty) })
+  }
+  const clearCart = () => {
+    setUndoLines(null)
+    patchDraft({ lines: [] })
+  }
+  const changeEaten = (meal: 'lunch' | 'dinner', checked: boolean) => {
+    setUndoLines(null)
+    patchDraft({ eatenToday: { ...draft.eatenToday, [meal]: checked } })
   }
 
   return (
@@ -82,8 +108,8 @@ export function PlanPage({ state, now, draft, onDraftChange }: {
             <h2 className="text-[18px] font-semibold">今天已吃過</h2>
             <p className="mt-1 text-sm text-muted">只排除今天，隔日會自動清空。</p>
             <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-              <label className={`flex gap-2 ${todayMeals.lunch ? '' : 'opacity-40'}`}><input type="checkbox" disabled={!todayMeals.lunch} checked={draft.eatenToday.lunch} onChange={(event) => patchDraft({ eatenToday: { ...draft.eatenToday, lunch: event.target.checked } })} />今天午餐已吃</label>
-              <label className={`flex gap-2 ${todayMeals.dinner ? '' : 'opacity-40'}`}><input type="checkbox" disabled={!todayMeals.dinner} checked={draft.eatenToday.dinner} onChange={(event) => patchDraft({ eatenToday: { ...draft.eatenToday, dinner: event.target.checked } })} />今天晚餐已吃</label>
+              <label className={`flex gap-2 ${todayMeals.lunch ? '' : 'opacity-40'}`}><input type="checkbox" disabled={!todayMeals.lunch} checked={draft.eatenToday.lunch} onChange={(event) => changeEaten('lunch', event.target.checked)} />今天午餐已吃</label>
+              <label className={`flex gap-2 ${todayMeals.dinner ? '' : 'opacity-40'}`}><input type="checkbox" disabled={!todayMeals.dinner} checked={draft.eatenToday.dinner} onChange={(event) => changeEaten('dinner', event.target.checked)} />今天晚餐已吃</label>
             </div>
           </section>
 
@@ -93,20 +119,23 @@ export function PlanPage({ state, now, draft, onDraftChange }: {
             <div className="mt-3 grid gap-2 rounded-[16px] bg-[var(--surface)] p-3 sm:grid-cols-[1fr_110px_auto]">
               <select className="h-11 rounded-[10px] border border-[var(--line)] bg-paper px-2" value={selectedDrink?.name ?? ''} onChange={(event) => selectDrink(event.target.value)}>{drinks.map((drink) => <option key={drink.name} value={drink.name}>{drink.name}</option>)}</select>
               <select className="h-11 rounded-[10px] border border-[var(--line)] bg-paper px-2" value={selectedSize ?? ''} onChange={(event) => setSelectedSize(event.target.value as SizeKey)}>{selectedDrink && availableSizes(selectedDrink).map((size) => <option key={size} value={size}>{SIZE_LABEL[size]} ${drinkPrice(selectedDrink, size)}</option>)}</select>
-              <button type="button" className="h-11 rounded-[980px] bg-[var(--accent)] px-4 text-white" onClick={addSelected}>加入試算</button>
+              <button type="button" className={`h-11 rounded-[980px] px-4 text-white ${projectedAfterAdd != null && projectedAfterAdd < 0 ? 'bg-red-600' : 'bg-[var(--accent)]'}`} onClick={addSelected}>
+                {projectedAfterAdd != null && projectedAfterAdd < 0 ? `仍要加入 · 超出 $${formatMoney(Math.abs(projectedAfterAdd))}` : `加入試算 · 買後剩 $${formatMoney(projectedAfterAdd)}`}
+              </button>
             </div>
+            {cartMessage && <div className="mt-2 flex items-center justify-between rounded-[10px] bg-[var(--surface)] px-3 py-2 text-sm"><span>✓ {cartMessage}</span>{undoLines && <button type="button" className="underline" onClick={() => { patchDraft({ lines: undoLines }); setUndoLines(null); setCartMessage('已復原') }}>復原</button>}</div>}
 
             {draft.lines.length === 0 ? <p className="mt-3 text-sm text-muted">購物車還是空的。</p> : (
               <ul className="mt-3 divide-y divide-[var(--line)] rounded-[16px] bg-[var(--surface)] px-3">
-                {draft.lines.map((line) => <CartLine key={`${line.category}:${line.name}:${line.size ?? ''}`} line={line} onQuantity={(qty) => patchDraft({ lines: setPlanLineQuantity(draft.lines, line, qty) })} />)}
+                {draft.lines.map((line) => <CartLine key={`${line.category}:${line.name}:${line.size ?? ''}`} line={line} onQuantity={(qty) => changeQuantity(line, qty)} />)}
               </ul>
             )}
             <div className={`mt-3 rounded-[16px] p-4 ${projected != null && projected < 0 ? 'bg-[color-mix(in_srgb,var(--accent)_12%,var(--surface))] text-[var(--accent)]' : 'bg-[var(--surface)]'}`}>
               <div className="flex justify-between text-sm"><span>購物車合計</span><strong>${formatMoney(total)}</strong></div>
               <p className="mt-2 text-xs">若照購物車買，月底還剩</p>
               <p className="text-[36px] font-semibold tabular-nums">${formatMoney(projected)}</p>
-              {projected != null && projected < 0 && <p className="text-sm font-medium">已超過可規劃金額 ${formatMoney(Math.abs(projected))}，仍可繼續試算。</p>}
-              {draft.lines.length > 0 && <button type="button" className="mt-3 text-sm underline" onClick={() => patchDraft({ lines: [] })}>清空購物車</button>}
+              {projected != null && projected < 0 && <p className="text-sm font-medium">⚠ 超出可規劃金額 ${formatMoney(Math.abs(projected))}，仍可繼續試算。</p>}
+              {draft.lines.length > 0 && <button type="button" className="mt-3 text-sm underline" onClick={clearCart}>清空購物車</button>}
             </div>
           </section>
 
