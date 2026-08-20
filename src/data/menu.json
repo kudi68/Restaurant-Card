@@ -1,44 +1,440 @@
 {
-  "restaurantName": "",
-  "mealUnitPriceDefault": 100.0,
-  "drinkUnitPriceDefault": 30.0,
+  "restaurantName": "員工餐廳",
+  "mealUnitPriceDefault": 80.0,
+  "drinkUnitPriceDefault": 60.0,
   "timezone": "Asia/Taipei",
   "items": [
     {
       "category": "buffet",
       "name": "基本餐",
-      "price": 62.0,
-      "enabled": true
+      "price": 70.0,
+      "enabled": true,
+      "subcategory": "主食",
+      "note": "基本主菜+3副菜"
+    },
+    {
+      "category": "buffet",
+      "name": "換購A餐",
+      "price": 95.0,
+      "enabled": true,
+      "subcategory": "主食",
+      "note": "A主菜+3副菜"
+    },
+    {
+      "category": "buffet",
+      "name": "換購B餐",
+      "price": 115.0,
+      "enabled": true,
+      "subcategory": "主食",
+      "note": "B主菜+3副菜"
+    },
+    {
+      "category": "buffet",
+      "name": "加購A餐",
+      "price": 120.0,
+      "enabled": true,
+      "subcategory": "主食",
+      "note": "基本主菜+A主菜+3副菜"
+    },
+    {
+      "category": "buffet",
+      "name": "加購B餐",
+      "price": 140.0,
+      "enabled": true,
+      "subcategory": "主食",
+      "note": "基本主菜+B主菜+3副菜"
+    },
+    {
+      "category": "buffet",
+      "name": "單點A",
+      "price": 60.0,
+      "enabled": true,
+      "subcategory": "主菜",
+      "note": "A主菜"
+    },
+    {
+      "category": "buffet",
+      "name": "單點B",
+      "price": 80.0,
+      "enabled": true,
+      "subcategory": "主菜",
+      "note": "B主菜"
+    },
+    {
+      "category": "buffet",
+      "name": "外帶盒",
+      "price": 5.0,
+      "enabled": true,
+      "subcategory": "加購",
+      "note": "加購"
+    },
+    {
+      "category": "special",
+      "name": "健康餐-蒜香肉片",
+      "price": 120.0,
+      "enabled": true,
+      "subcategory": "健康餐"
+    },
+    {
+      "category": "special",
+      "name": "健康餐-迷迭香雞片",
+      "price": 120.0,
+      "enabled": true,
+      "subcategory": "健康餐"
+    },
+    {
+      "category": "special",
+      "name": "特色餐-香酥大雞腿",
+      "price": 110.0,
+      "enabled": true,
+      "subcategory": "特色餐"
+    },
+    {
+      "category": "fruit",
+      "name": "蘋果",
+      "price": 35.0,
+      "enabled": true,
+      "subcategory": "水果",
+      "deal": {
+        "qty": 3,
+        "price": 100.0
+      }
+    },
+    {
+      "category": "fruit",
+      "name": "柳丁/柑橘",
+      "price": 20.0,
+      "enabled": true,
+      "subcategory": "水果",
+      "deal": {
+        "qty": 6,
+        "price": 110.0
+      }
+    },
+    {
+      "category": "fruit",
+      "name": "藍莓",
+      "price": 80.0,
+      "enabled": true,
+      "subcategory": "水果"
+    },
+    {
+      "category": "fruit",
+      "name": "酪梨",
+      "price": 55.0,
+      "enabled": true,
+      "subcategory": "水果"
+    },
+    {
+      "category": "fruit",
+      "name": "水梨",
+      "price": 45.0,
+      "enabled": true,
+      "subcategory": "水果"
+    },
+    {
+      "category": "fruit",
+      "name": "黃金奇異果",
+      "price": 25.0,
+      "enabled": true,
+      "subcategory": "水果"
+    },
+    {
+      "category": "fruit",
+      "name": "紅色火龍果",
+      "price": 60.0,
+      "enabled": true,
+      "subcategory": "水果"
+    },
+    {
+      "category": "grocery",
+      "name": "寶佳麗強氣泡水",
+      "price": 30.0,
+      "enabled": true,
+      "subcategory": "寶佳麗",
+      "boxPrice": 720.0,
+      "note": "330mL；1箱=24瓶"
+    },
+    {
+      "category": "grocery",
+      "name": "寶佳麗通寧汽水",
+      "price": 50.0,
+      "enabled": true,
+      "subcategory": "寶佳麗",
+      "boxPrice": 1200.0,
+      "note": "330mL；1箱=24瓶"
+    },
+    {
+      "category": "grocery",
+      "name": "職人動物福利鮮奶",
+      "price": 80.0,
+      "enabled": true,
+      "subcategory": "鮮奶",
+      "note": "936mL"
+    },
+    {
+      "category": "grocery",
+      "name": "愛之味燕麥奶",
+      "price": 120.0,
+      "enabled": true,
+      "subcategory": "愛之味",
+      "boxPrice": 2880.0,
+      "note": "990mL；1箱=24瓶"
+    },
+    {
+      "category": "grocery",
+      "name": "波蜜元氣海礦補給飲",
+      "price": 30.0,
+      "enabled": true,
+      "subcategory": "波蜜",
+      "boxPrice": 720.0,
+      "note": "600mL；1箱=24瓶"
+    },
+    {
+      "category": "grocery",
+      "name": "養樂多豆漿",
+      "price": 15.0,
+      "enabled": true,
+      "subcategory": "養樂多",
+      "boxPrice": 360.0,
+      "note": "200mL；1箱=24瓶"
+    },
+    {
+      "category": "grocery",
+      "name": "養樂多蘋果汁",
+      "price": 15.0,
+      "enabled": true,
+      "subcategory": "養樂多",
+      "boxPrice": 360.0,
+      "note": "200mL；1箱=24瓶"
+    },
+    {
+      "category": "grocery",
+      "name": "養樂多超無限運動飲料",
+      "price": 20.0,
+      "enabled": true,
+      "subcategory": "養樂多",
+      "boxPrice": 480.0,
+      "note": "320mL；1箱=24瓶"
+    },
+    {
+      "category": "grocery",
+      "name": "養樂多優格碳酸飲料",
+      "price": 75.0,
+      "enabled": true,
+      "subcategory": "養樂多",
+      "boxPrice": 1800.0,
+      "note": "300mL；1箱=24瓶"
+    },
+    {
+      "category": "grocery",
+      "name": "愛之味莎莎亞椰奶",
+      "price": 20.0,
+      "enabled": true,
+      "subcategory": "愛之味",
+      "boxPrice": 480.0,
+      "note": "250mL；1箱=24瓶"
+    },
+    {
+      "category": "grocery",
+      "name": "波蜜紫色蔬果汁",
+      "price": 20.0,
+      "enabled": true,
+      "subcategory": "波蜜",
+      "boxPrice": 360.0,
+      "note": "250mL；1箱=18瓶"
+    },
+    {
+      "category": "grocery",
+      "name": "咖啡師燕麥奶",
+      "price": 120.0,
+      "enabled": true,
+      "subcategory": "燕麥奶"
     },
     {
       "category": "nabeyaki",
       "name": "原味鍋燒",
       "price": 80.0,
-      "enabled": true
+      "enabled": true,
+      "subcategory": "鍋燒"
     },
     {
       "category": "nabeyaki",
       "name": "沙茶鍋燒",
       "price": 85.0,
-      "enabled": true
+      "enabled": true,
+      "subcategory": "鍋燒"
     },
     {
       "category": "nabeyaki",
       "name": "韓式鍋燒",
       "price": 85.0,
-      "enabled": true
+      "enabled": true,
+      "subcategory": "鍋燒"
+    },
+    {
+      "category": "nabeyaki",
+      "name": "加蛋",
+      "price": 10.0,
+      "enabled": true,
+      "subcategory": "加購"
+    },
+    {
+      "category": "nabeyaki",
+      "name": "加麵",
+      "price": 10.0,
+      "enabled": true,
+      "subcategory": "加購"
+    },
+    {
+      "category": "noodles",
+      "name": "古早味乾麵",
+      "price": 63.0,
+      "enabled": true,
+      "subcategory": "麵食水餃",
+      "note": "基本餐；597卡；外包68"
+    },
+    {
+      "category": "noodles",
+      "name": "單純風味乾拌麵",
+      "price": 50.0,
+      "enabled": true,
+      "subcategory": "麵食水餃",
+      "note": "麻醬/麻辣/肉臊；507卡"
+    },
+    {
+      "category": "noodles",
+      "name": "素拌麵",
+      "price": 50.0,
+      "enabled": true,
+      "subcategory": "麵食水餃",
+      "note": "527卡"
+    },
+    {
+      "category": "noodles",
+      "name": "乾拌麵套餐",
+      "price": 80.0,
+      "enabled": true,
+      "subcategory": "麵食水餃",
+      "note": "686卡"
+    },
+    {
+      "category": "noodles",
+      "name": "素拌麵套餐",
+      "price": 80.0,
+      "enabled": true,
+      "subcategory": "麵食水餃",
+      "note": "718卡"
     },
     {
       "category": "noodles",
       "name": "餛飩麵",
       "price": 80.0,
-      "enabled": true
+      "enabled": true,
+      "subcategory": "麵食水餃",
+      "note": "533卡"
+    },
+    {
+      "category": "noodles",
+      "name": "沙茶乾麵",
+      "price": 80.0,
+      "enabled": true,
+      "subcategory": "麵食水餃",
+      "note": "530卡"
+    },
+    {
+      "category": "noodles",
+      "name": "榨菜肉絲麵",
+      "price": 80.0,
+      "enabled": true,
+      "subcategory": "麵食水餃",
+      "note": "589卡"
+    },
+    {
+      "category": "noodles",
+      "name": "銷魂皮蛋肉醬麵",
+      "price": 80.0,
+      "enabled": true,
+      "subcategory": "麵食水餃",
+      "note": "634卡"
+    },
+    {
+      "category": "noodles",
+      "name": "一份水餃",
+      "price": 84.0,
+      "enabled": true,
+      "subcategory": "麵食水餃",
+      "note": "625卡"
+    },
+    {
+      "category": "noodles",
+      "name": "半份水餃",
+      "price": 45.0,
+      "enabled": true,
+      "subcategory": "麵食水餃"
+    },
+    {
+      "category": "noodles",
+      "name": "燙青菜",
+      "price": 40.0,
+      "enabled": true,
+      "subcategory": "麵食水餃",
+      "note": "98卡"
+    },
+    {
+      "category": "noodles",
+      "name": "清蒸肉圓+蘿蔔貢丸湯",
+      "price": 75.0,
+      "enabled": true,
+      "subcategory": "台灣小吃",
+      "note": "500卡"
+    },
+    {
+      "category": "noodles",
+      "name": "米糕+蘿蔔貢丸湯",
+      "price": 75.0,
+      "enabled": true,
+      "subcategory": "台灣小吃",
+      "note": "615卡"
+    },
+    {
+      "category": "noodles",
+      "name": "鹿港芋丸+蘿蔔貢丸湯",
+      "price": 75.0,
+      "enabled": true,
+      "subcategory": "台灣小吃",
+      "note": "600卡"
+    },
+    {
+      "category": "noodles",
+      "name": "蘿蔔貢丸湯",
+      "price": 40.0,
+      "enabled": true,
+      "subcategory": "台灣小吃",
+      "note": "118卡"
+    },
+    {
+      "category": "noodles",
+      "name": "淡水魚丸湯",
+      "price": 40.0,
+      "enabled": true,
+      "subcategory": "台灣小吃",
+      "note": "115卡"
+    },
+    {
+      "category": "noodles",
+      "name": "餛飩湯",
+      "price": 40.0,
+      "enabled": true,
+      "subcategory": "台灣小吃",
+      "note": "120卡"
     },
     {
       "category": "dessert",
       "name": "熱壓吐司",
       "price": 55.0,
-      "enabled": true
+      "enabled": true,
+      "subcategory": "甜點"
     },
     {
       "category": "drink",
@@ -49,7 +445,8 @@
         "iced_m": 40.0,
         "xl": 65.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "咖啡"
     },
     {
       "category": "drink",
@@ -60,7 +457,8 @@
         "iced_m": 45.0,
         "xl": 75.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "咖啡"
     },
     {
       "category": "drink",
@@ -71,7 +469,8 @@
         "iced_m": 45.0,
         "xl": 80.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "咖啡"
     },
     {
       "category": "drink",
@@ -82,7 +481,8 @@
         "iced_m": 55.0,
         "xl": 95.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "咖啡"
     },
     {
       "category": "drink",
@@ -93,7 +493,8 @@
         "iced_m": 65.0,
         "xl": 110.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "咖啡"
     },
     {
       "category": "drink",
@@ -104,7 +505,8 @@
         "iced_m": 65.0,
         "xl": 110.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "咖啡"
     },
     {
       "category": "drink",
@@ -115,7 +517,8 @@
         "iced_m": 65.0,
         "xl": 110.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "咖啡"
     },
     {
       "category": "drink",
@@ -126,7 +529,8 @@
         "iced_m": 25.0,
         "xl": 40.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -137,7 +541,8 @@
         "iced_m": 30.0,
         "xl": 45.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -148,7 +553,8 @@
         "iced_m": 40.0,
         "xl": 55.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -159,7 +565,8 @@
         "iced_m": 45.0,
         "xl": 65.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -170,7 +577,8 @@
         "iced_m": 35.0,
         "xl": 50.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -181,7 +589,8 @@
         "iced_m": 40.0,
         "xl": 55.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -192,7 +601,8 @@
         "iced_m": 50.0,
         "xl": 65.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -203,7 +613,8 @@
         "iced_m": 55.0,
         "xl": 75.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -212,7 +623,8 @@
         "iced_m": 45.0,
         "xl": 60.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -222,7 +634,8 @@
         "iced_m": 65.0,
         "xl": 80.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -231,7 +644,8 @@
         "iced_m": 50.0,
         "xl": 70.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -242,7 +656,8 @@
         "iced_m": 60.0,
         "xl": 70.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -253,7 +668,8 @@
         "iced_m": 80.0,
         "xl": 105.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -264,7 +680,8 @@
         "iced_m": 70.0,
         "xl": 90.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -274,7 +691,8 @@
         "iced_m": 75.0,
         "xl": 95.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -284,7 +702,8 @@
         "iced_m": 75.0,
         "xl": 90.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -293,7 +712,8 @@
         "iced_m": 75.0,
         "xl": 95.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -301,7 +721,8 @@
       "prices": {
         "xl": 75.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -310,7 +731,8 @@
         "iced_m": 51.0,
         "xl": 70.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
     },
     {
       "category": "drink",
@@ -319,7 +741,153 @@
         "iced_m": 60.0,
         "xl": 80.0
       },
-      "enabled": true
+      "enabled": true,
+      "subcategory": "一般飲料"
+    },
+    {
+      "category": "drink",
+      "name": "可可咖啡",
+      "prices": {
+        "xl": 90.0
+      },
+      "enabled": true,
+      "subcategory": "新品"
+    },
+    {
+      "category": "drink",
+      "name": "柚香咖啡",
+      "prices": {
+        "xl": 80.0
+      },
+      "enabled": true,
+      "subcategory": "新品"
+    },
+    {
+      "category": "drink",
+      "name": "黑糖咖啡",
+      "prices": {
+        "xl": 80.0
+      },
+      "enabled": true,
+      "subcategory": "新品"
+    },
+    {
+      "category": "drink",
+      "name": "蜂蜜咖啡",
+      "prices": {
+        "xl": 80.0
+      },
+      "enabled": true,
+      "subcategory": "新品"
+    },
+    {
+      "category": "drink",
+      "name": "泰式奶茶",
+      "prices": {
+        "xl": 65.0
+      },
+      "enabled": true,
+      "subcategory": "新品"
+    }
+  ],
+  "rules": [
+    {
+      "type": "upgrade",
+      "appliesTo": "麵食:麵食水餃",
+      "name": "套餐A",
+      "price": 30.0,
+      "content": "豆干2片+滷蛋1個+豆芽增量"
+    },
+    {
+      "type": "upgrade",
+      "appliesTo": "麵食:麵食水餃",
+      "name": "套餐B",
+      "price": 30.0,
+      "content": "肉片5片+淡水魚丸1個"
+    },
+    {
+      "type": "upgrade",
+      "appliesTo": "麵食:麵食水餃",
+      "name": "套餐C",
+      "price": 30.0,
+      "content": "豆干2片+素肉燥+豆芽增量",
+      "note": "只限素拌麵"
+    },
+    {
+      "type": "addon",
+      "appliesTo": "麵食:麵食水餃",
+      "name": "肉片",
+      "price": 10.0,
+      "content": "2片"
+    },
+    {
+      "type": "addon",
+      "appliesTo": "麵食:麵食水餃",
+      "name": "豆干",
+      "price": 10.0,
+      "content": "2片"
+    },
+    {
+      "type": "addon",
+      "appliesTo": "麵食:麵食水餃",
+      "name": "小貢丸",
+      "price": 10.0,
+      "content": "2個"
+    },
+    {
+      "type": "addon",
+      "appliesTo": "麵食:麵食水餃",
+      "name": "淡水魚丸",
+      "price": 10.0,
+      "content": "2個"
+    },
+    {
+      "type": "addon",
+      "appliesTo": "麵食:麵食水餃",
+      "name": "餛飩",
+      "price": 10.0,
+      "content": "2個"
+    },
+    {
+      "type": "addon",
+      "appliesTo": "麵食:麵食水餃",
+      "name": "加麵",
+      "price": 10.0,
+      "content": "1份"
+    },
+    {
+      "type": "addon",
+      "appliesTo": "麵食:麵食水餃",
+      "name": "滷蛋",
+      "price": 15.0,
+      "content": "1個"
+    },
+    {
+      "type": "addon",
+      "appliesTo": "鍋燒:加購",
+      "name": "加蛋",
+      "price": 10.0,
+      "content": "1個"
+    },
+    {
+      "type": "addon",
+      "appliesTo": "鍋燒:加購",
+      "name": "加麵",
+      "price": 10.0,
+      "content": "1份"
+    },
+    {
+      "type": "option",
+      "appliesTo": "麵食:麵食水餃",
+      "name": "麵體",
+      "content": "油麵/白麵/意麵/米粉/粄條麵",
+      "note": "自由選擇，不加價"
+    },
+    {
+      "type": "info",
+      "appliesTo": "麵食:麵食水餃",
+      "name": "供應時段",
+      "content": "週一至週五 11:00~18:30"
     }
   ]
 }

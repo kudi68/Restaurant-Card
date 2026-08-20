@@ -24,6 +24,7 @@ import {
   leftoverOf,
   remainingDateList,
 } from './lib/leftover.ts'
+import { balanceReminderFor } from './lib/reminder.ts'
 import {
   loadPlanDraft,
   necessaryTotalForPlan,
@@ -124,6 +125,10 @@ export default function App() {
   )
   const advice =
     daily == null ? null : todayAdvice(state.mode, daily, spentToday)
+  const balanceReminder = useMemo(
+    () => balanceReminderFor(state.entries, now),
+    [state.entries, now],
+  )
   const leftover = useMemo(() => {
     if (state.balance == null) return null
     const dates = remainingDateList({
@@ -353,6 +358,13 @@ export default function App() {
         <span />
       </header>
 
+      {state.balance != null && balanceReminder && (
+        <section className="mx-4 mt-3 flex items-center justify-between gap-3 rounded-[12px] bg-[var(--surface)] p-3 text-sm ring-1 ring-[var(--accent)]">
+          <p>⏰ 上次記錄餘額已是 <strong>{balanceReminder.days} 天前</strong>，現在餘額可能需要更新。</p>
+          <button type="button" className="shrink-0 text-[var(--accent-2)] underline" onClick={() => document.getElementById('balance-input')?.focus()}>重新登記</button>
+        </section>
+      )}
+
       <section className="px-4 pb-6 pt-10 text-center">
         <p className="text-[17px] text-[var(--muted)]">{dayHint}</p>
         <h1 className="mt-1 text-[40px] font-semibold leading-[1.1] tracking-[-0.4px]">餘額</h1>
@@ -368,6 +380,7 @@ export default function App() {
         )}
         <form className="mx-auto mt-5 grid max-w-md gap-2 sm:grid-cols-[1fr_auto]" onSubmit={onAdjust}>
           <input
+            id="balance-input"
             className="h-11 rounded-[11px] border-[3px] border-[var(--line)] bg-[var(--surface)] px-3 text-left text-[var(--fg)]"
             inputMode="decimal"
             type="number"

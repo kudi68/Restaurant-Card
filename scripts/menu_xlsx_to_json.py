@@ -1,4 +1,11 @@
-"""Compile data/menu.xlsx into src/data/menu.json."""
+"""Compile data/menu.xlsx into src/data/menu.json.
+
+Schema v3 additions:
+- Simple items gain optional subcategory / deal / boxPrice.
+- Sheets 特色餐 (special) and 水果 (fruit) are first-class categories.
+- 冰箱雜貨 maps to the grocery category (displayed as 冰箱雜貨).
+- 加購規則 sheet becomes structured addon/upgrade/option/info rules.
+"""
 
 from __future__ import annotations
 
@@ -14,11 +21,14 @@ OUT = ROOT / "src" / "data" / "menu.json"
 SIZE_KEYS = ("hot_s", "hot_m", "iced_m", "xl")
 SIMPLE_SHEETS = {
     "自助餐": "buffet",
+    "特色餐": "special",
+    "水果": "fruit",
+    "冰箱雜貨": "grocery",
     "鍋燒": "nabeyaki",
     "麵食": "noodles",
     "甜點(飲料區)": "dessert",
-    "生活食品": "grocery",
 }
+RULE_TYPES = {"upgrade", "addon", "option", "info"}
 
 
 def enabled_of(value: object) -> bool:
@@ -46,9 +56,32 @@ def price_of(value: object) -> float | None:
     return number
 
 
+def deal_of(value: object) -> dict | None:
+    if value is None or value == "":
+        return None
+    text = str(value).strip()
+    try:
+        qty_part, price_part = text.split("=", 1)
+        qty = int(qty_part)
+        price = float(price_part)
+    except ValueError:
+        raise SystemExit(f"優惠欄格式錯誤（應為 數量=價格，例如 3=100）: {text!r}")
+    if qty < 2 or price <= 0:
+        raise SystemExit(f"優惠欄內容不合理: {text!r}")
+    return {"qty": qty, "price": price}
+
+
+def text_of(value: object) -> str | None:
+    if value is None or value == "":
+        return None
+    text = str(value).strip()
+    return text or None
+
+
 def compile_menu(path: Path = XLSX) -> dict:
     wb = load_workbook(path, data_only=True)
     items: list[dict] = []
+    rules: list[dict] = []
     seen: set[tuple[str, str]] = set()
     errors: list[str] = []
 
@@ -67,16 +100,25 @@ def compile_menu(path: Path = XLSX) -> dict:
                 errors.append(f"{sheet_name}!B{index} missing price for {name}")
                 continue
             seen.add(key)
-            note = row[3] if len(row) > 3 and row[3] else None
-            items.append(
-                {
-                    "category": category,
-                    "name": name,
-                    "price": price,
-                    "enabled": enabled_of(row[2] if len(row) > 2 else "是"),
-                    **({"note": str(note)} if note else {}),
-                }
-            )
+            item: dict = {
+                "category": category,
+                "name": name,
+                "price": price,
+                "enabled": enabled_of(row[2] if len(row) > 2 else "是"),
+            }
+            subcategory = text_of(row[3] if len(row) > 3 else None)
+            if subcategory:
+                item["subcategory"] = subcategory
+            deal = deal_of(row[4] if len(row) > 4 else None)
+            if deal:
+                item["deal"] = deal
+            box_price = price_of(row[5] if len(row) > 5 else None)
+            if box_price is not None:
+                item["boxPrice"] = box_price
+            note = text_of(row[6] if len(row) > 6 else None)
+            if note:
+                item["note"] = note
+            items.append(item)
 
     drink_ws = wb["飲料"]
     for index, row in enumerate(drink_ws.iter_rows(min_row=2, values_only=True), start=2):
@@ -96,16 +138,44 @@ def compile_menu(path: Path = XLSX) -> dict:
             errors.append(f"飲料!A{index} {name} has no sizes")
             continue
         seen.add(key)
-        note = row[6] if len(row) > 6 and row[6] else None
-        items.append(
-            {
-                "category": "drink",
-                "name": name,
-                "prices": prices,
-                "enabled": enabled_of(row[5] if len(row) > 5 else "是"),
-                **({"note": str(note)} if note else {}),
-            }
-        )
+        item: dict = {
+            "category": "drink",
+            "name": name,
+            "prices": prices,
+            "enabled": enabled_of(row[5] if len(row) > 5 else "是"),
+        }
+        subcategory = text_of(row[6] if len(row) > 6 else None)
+        if subcategory:
+            item["subcategory"] = subcategory
+        note = text_of(row[7] if len(row) > 7 else None)
+        if note:
+            item["note"] = note
+        items.append(item)
+
+    rules_ws = wb["加購規則"]
+    for index, row in enumerate(rules_ws.iter_rows(min_row=2, values_only=True), start=2):
+        rule_type = text_of(row[0] if row else None)
+        if rule_type not in RULE_TYPES:
+            errors.append(f"加購規則!A{index} unknown rule type {rule_type!r}")
+            continue
+        rule: dict = {
+            "type": rule_type,
+            "appliesTo": text_of(row[1] if len(row) > 1 else None) or "",
+            "name": text_of(row[2] if len(row) > 2 else None) or "",
+        }
+        if rule_type in ("upgrade", "addon"):
+            add_price = price_of(row[4] if len(row) > 4 else None)
+            if add_price is None:
+                errors.append(f"加購規則!E{index} missing price for {rule['name']}")
+                continue
+            rule["price"] = add_price
+        content = text_of(row[3] if len(row) > 3 else None)
+        if content:
+            rule["content"] = content
+        note = text_of(row[5] if len(row) > 5 else None)
+        if note:
+            rule["note"] = note
+        rules.append(rule)
 
     settings = {row[0]: row[1] for row in wb["設定草稿"].iter_rows(min_row=2, values_only=True) if row and row[0]}
     if errors:
@@ -117,6 +187,7 @@ def compile_menu(path: Path = XLSX) -> dict:
         "drinkUnitPriceDefault": float(settings.get("換算_一杯預設") or 30),
         "timezone": "Asia/Taipei",
         "items": items,
+        "rules": rules,
     }
 
 
@@ -128,6 +199,7 @@ def main() -> None:
     for item in menu["items"]:
         counts[item["category"]] = counts.get(item["category"], 0) + 1
     print(f"wrote {OUT} ({sum(counts.values())} items) {counts}")
+    print(f"rules: {len(menu['rules'])}")
 
 
 if __name__ == "__main__":
